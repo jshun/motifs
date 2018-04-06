@@ -80,11 +80,10 @@ int parallel_main(int argc, char* argv[]) {
       }
 
       // Actual listing of edges
-      if (outEdges.find(k) != outEdges.end()) {
-        for (auto it = outEdges[k].begin(); it != outEdges[k].end(); ++it) {
-          uintT v = *it;
-          for (auto it2 = outEdges[v].begin(); it2 != outEdges[v].end(); ++it2) {
-            //cout << "2-hop edge: " << k << "->" << *it2 << endl;
+      if (inEdges.find(k) != inEdges.end() && outEdges.find(k) != outEdges.end()) {
+        for (auto itSrc = inEdges[k].begin(); itSrc != inEdges[k].end(); ++itSrc) {
+          for (auto itDst = outEdges[k].begin(); itDst != outEdges[k].end(); ++itDst) {
+            //cout << "2-hop edge: " << *itSrc << "->" << *itDst << endl;
             // TODO: finish this up by storing them on an edgeArray
             listCount++;
           }
