@@ -2,6 +2,8 @@
 #include "graphIO.h"
 #include "parallel.h"
 #include "gettime.h"
+#include <map>
+#include <list>
 
 //Takes as input a file in SNAP format
 //(http://snap.stanford.edu/data/index.html).
@@ -23,31 +25,74 @@ int parallel_main(int argc, char* argv[]) {
   long n = max(G.numRows,G.numCols); //number of vertices
 
   // keep track of both out and in-degrees for each vertex.
-  uintT* out_degrees = newA(uintT,n);
-  uintT* in_degrees = newA(uintT,n);
+  uintT* outDegrees = newA(uintT,n);
+  uintT* inDegrees = newA(uintT,n);
   for(long i=0;i<n;i++) {
-    out_degrees[i] = 0;
-    in_degrees[i] = 0;
+    outDegrees[i] = 0;
+    inDegrees[i] = 0;
   }
+
+  // keep track of adjacency list for each vertex.
+  // NOTE: currently using vanilla STL.
+  map<uintT, list<uintT>> inEdges = {};
+  map<uintT, list<uintT>> outEdges = {};
+
   long numBatches = 1+(totalEdges-1)/batchSize;
   long count;
+  long listCount;
 
   for(long i=0;i<numBatches;i++) {
     for(long j=i*batchSize;j<min((long)(i+1)*batchSize,(long)totalEdges);j++) {
-      out_degrees[G.E[j].u]++;
-      in_degrees[G.E[j].v]++;
+      auto src = G.E[j].u;
+      auto dst = G.E[j].v;
+
+      outDegrees[src]++;
+      inDegrees[dst]++;
+
+      // outgoing edges
+      if (!outEdges.insert(make_pair(src, list<uintT>{dst})).second) {
+        outEdges[src].push_back(dst);
+        //cout << "outEdges[" << src << "] size so far = " << outEdges[src].size() << endl;
+      } else {
+        outEdges[src] = {dst};
+      }
+
+      // incoming edges
+      if (!inEdges.insert(make_pair(dst, list<uintT>{src})).second) {
+        inEdges[dst].push_back(src);
+        //cout << "inEdges[" << dst << "] size so far = " << inEdges[dst].size() << endl;
+      } else {
+        inEdges[dst] = {src};
+      }
+
     }
     //output number of 2-paths. currently it is not efficient
     //because it loops through all vertices. can be made more
     //efficient by keeping track of vertices with degree > 1 and
     //looping over those only
     count = 0;
+    listCount = 0;
     for(long k=0;k<n;k++) {
-      if(in_degrees[k] * out_degrees[k] >= 1) {
-        count += in_degrees[k] * out_degrees[k];
+
+      // O(1) count
+      if(inDegrees[k] * outDegrees[k] >= 1) {
+        count += inDegrees[k] * outDegrees[k];
+      }
+
+      // Actual listing of edges
+      if (outEdges.find(k) != outEdges.end()) {
+        for (auto it = outEdges[k].begin(); it != outEdges[k].end(); ++it) {
+          uintT v = *it;
+          for (auto it2 = outEdges[v].begin(); it2 != outEdges[v].end(); ++it2) {
+            //cout << "2-hop edge: " << k << "->" << *it2 << endl;
+            // TODO: finish this up by storing them on an edgeArray
+            listCount++;
+          }
+        }
       }
     }
   }
   cout << "total count = " << count << endl;
+  cout << "total count via listing (should match above) = " << listCount << endl;
   t.reportTotal("total time");
 }
