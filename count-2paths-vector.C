@@ -63,16 +63,6 @@ int parallel_main(int argc, char* argv[]) {
   t.start();
   long n = max(G.numRows,G.numCols); //number of vertices
 
-  // keep track of both out and in-degrees for each vertex.
-  uintT* outDegrees = newA(uintT,n);
-  uintT* inDegrees = newA(uintT,n);
-  for(long i=0;i<n;i++) {
-    outDegrees[i] = 0;
-    inDegrees[i] = 0;
-  }
-
-  // keep track of adjacency list for each vertex.
-  // NOTE: currently using vanilla STL.
   memoryPool M(1 << 30);
   myVector* inEdges = newA(myVector,n);
   myVector* outEdges = newA(myVector,n);
@@ -80,7 +70,6 @@ int parallel_main(int argc, char* argv[]) {
   for(long i=0;i<n;i++) { outEdges[i].init(&M); }
 
   long numBatches = 1+(totalEdges-1)/batchSize;
-  long count;
   long listCount;
 
   for(long i=0;i<numBatches;i++) {
@@ -89,24 +78,13 @@ int parallel_main(int argc, char* argv[]) {
       uintT dst = G.E[j].v;
       outEdges[src].add(dst);
       inEdges[dst].add(src);
-      outDegrees[src]++;
-      inDegrees[dst]++;
-
     }
     //output number of 2-paths. currently it is not efficient
     //because it loops through all vertices. can be made more
     //efficient by keeping track of vertices with degree > 1 and
     //looping over those only
-    count = 0;
     listCount = 0;
     for(long k=0;k<n;k++) {
-
-      // O(1) count
-      if(inDegrees[k] * outDegrees[k] >= 1) {
-        count += inDegrees[k] * outDegrees[k];
-      }
-
-      
       for(long g=0;g<inEdges[k].size();g++) {
       	for(long h=0;h<outEdges[k].size();h++) {
       	  //check to force a read of edge list. should never return true.
@@ -114,15 +92,12 @@ int parallel_main(int argc, char* argv[]) {
       	  listCount++;
       	}
       }
-
     }
   }
-  cout << "total count = " << count << endl;
-  cout << "total count via listing (should match above) = " << listCount << endl;
-  t.reportTotal("total time");
 
+  cout << "total count via listing = " << listCount << endl;
+  t.reportTotal("total time");
   
   M.del();
   free(inEdges); free(outEdges);
-  free(inDegrees); free(outDegrees);
 }
