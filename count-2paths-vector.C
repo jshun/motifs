@@ -25,23 +25,22 @@ struct memoryPool {
 };
 
 struct myVector {
-  long maxSize, start, end; uintT* A; memoryPool* M;
-  void init(memoryPool* _M) { M = _M; maxSize = 16; start = M->allocate(maxSize); end = start;}
+  long maxSize, end; uintT* A;
+  void init() { maxSize = 1; end = 0; A = newA(uintT,maxSize);}
   void resize() { 
-    long newStart = M->allocate(2*maxSize);
+    uintT* B = newA(uintT,2*maxSize);
     for(long i=0; i<maxSize; i++) {
-      M->pool[newStart+i] = M->pool[start+i]; 
+      B[i] = A[i];
     }
-    start = newStart;
-    end = start + maxSize;
+    A = B;
     maxSize *= 2;    
   }
   void add(uintT v) { 
-    if((end-start) == maxSize) resize();
-    M->pool[end++] = v;
+    if(end == maxSize) resize();
+    A[end++] = v;
   }
-  uintT size() { return end-start; }
-  uintT get(uintT i) { return M->pool[start+i]; }
+  uintT size() { return end; }
+  uintT get(uintT i) { return A[i]; }
 };
 
 //Takes as input a file in SNAP format
@@ -63,11 +62,11 @@ int parallel_main(int argc, char* argv[]) {
   t.start();
   long n = max(G.numRows,G.numCols); //number of vertices
 
-  memoryPool M(1 << 30);
+  //memoryPool M(1 << 30);
   myVector* inEdges = newA(myVector,n);
   myVector* outEdges = newA(myVector,n);
-  for(long i=0;i<n;i++) { inEdges[i].init(&M); }
-  for(long i=0;i<n;i++) { outEdges[i].init(&M); }
+  for(long i=0;i<n;i++) { inEdges[i].init(); }
+  for(long i=0;i<n;i++) { outEdges[i].init(); }
 
   long numBatches = 1+(totalEdges-1)/batchSize;
   long listCount;
@@ -98,6 +97,5 @@ int parallel_main(int argc, char* argv[]) {
   cout << "total count via listing = " << listCount << endl;
   t.reportTotal("total time");
   
-  M.del();
   free(inEdges); free(outEdges);
 }
