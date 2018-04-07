@@ -32,6 +32,7 @@ struct myVector {
     for(long i=0; i<maxSize; i++) {
       B[i] = A[i];
     }
+    //free(A); //should free
     A = B;
     maxSize *= 2;    
   }
