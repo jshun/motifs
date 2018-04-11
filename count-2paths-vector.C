@@ -75,8 +75,12 @@ int parallel_main(int argc, char *argv[]) {
   // memoryPool M(1 << 30);
   myVector *inEdges = newA(myVector, n);
   myVector *outEdges = newA(myVector, n);
-  for (long i = 0; i < n; i++) { inEdges[i].init(); }
-  for (long i = 0; i < n; i++) { outEdges[i].init(); }
+  uintT *degrees = newA(uintT, n);  // so we can skip nodes with degree < 2
+  for (long i = 0; i < n; i++) {
+    inEdges[i].init();
+    outEdges[i].init();
+    degrees[i] = 0;
+  }
 
   long numBatches = 1 + (totalEdges - 1) / batchSize;
   long listCount = 0;
@@ -94,13 +98,16 @@ int parallel_main(int argc, char *argv[]) {
       uintT dst = G.E[j].v;
       batchOutEdges[src].add(dst);
       batchInEdges[dst].add(src);
+      degrees[src]++;
+      degrees[dst]++;
     }
 
-    // output number of 2-paths. currently it is not efficient
-    // because it loops through all vertices. can be made more
-    // efficient by keeping track of vertices with degree > 1 and
-    // looping over those only
     for (long k = 0; k < n; k++) {
+      // skip vertices with degree smaller than 2, as it isn't possible to have
+      // it in the center of a 2-hop path
+      if (degrees[k] < 2) {
+        continue;
+      }
 
       // new incoming edges generate 2 hop paths with new outgoing
       // edges and with existing outgoing edges
