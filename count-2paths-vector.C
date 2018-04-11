@@ -65,7 +65,6 @@ int parallel_main(int argc, char *argv[]) {
   long totalEdges = P.getOptionLongValue("-totalEdges", 1000000);
   edgeArray<uintT> G = readSNAP<uintT>(iFile);
 
-  cout << "number of edges read = " << (long)G.nonZeros << endl;
   // minimum of totalEdges and number of edges in the graph
   totalEdges = min(totalEdges, (long)G.nonZeros);
   cout << "starting timer\n";
@@ -80,7 +79,7 @@ int parallel_main(int argc, char *argv[]) {
   for (long i = 0; i < n; i++) { outEdges[i].init(); }
 
   long numBatches = 1 + (totalEdges - 1) / batchSize;
-  long listCount;
+  long listCount = 0;
 
   for (long i = 0; i < numBatches; i++) {
     myVector *batchInEdges = newA(myVector, n);
@@ -101,28 +100,29 @@ int parallel_main(int argc, char *argv[]) {
     // because it loops through all vertices. can be made more
     // efficient by keeping track of vertices with degree > 1 and
     // looping over those only
-    listCount = 0;
     for (long k = 0; k < n; k++) {
+
+      // new incoming edges generate 2 hop paths with new outgoing
+      // edges and with existing outgoing edges
       for (long g = 0; g < batchInEdges[k].size(); g++) {
-        for (long h = 0; h < outEdges[k].size(); h++) {
+        for (long h = 0; h < batchOutEdges[k].size(); h++) {
           listCount++;
         }
-        for (long h = 0; h < batchOutEdges[k].size(); h++) {
+        for (long h = 0; h < outEdges[k].size(); h++) {
           listCount++;
         }
       }
 
-      for (long g = 0; g < inEdges[k].size(); g++) {
-        for (long h = 0; h < batchOutEdges[k].size(); h++) {
-          listCount++;
-        }
-        for (long h = 0; h < outEdges[k].size(); h++) {
+      // new outgoing edges generate 2 hop paths with existing
+      // incoming edges
+      for (long g = 0; g < batchOutEdges[k].size(); g++) {
+        for (long h = 0; h < inEdges[k].size(); h++) {
           listCount++;
         }
       }
     }
 
-    // store processed edges for future passes
+    // store edges processed so far for future passes
     for (long j = i * batchSize;
          j < min((long)(i + 1) * batchSize, (long)totalEdges); j++) {
       uintT src = G.E[j].u;
