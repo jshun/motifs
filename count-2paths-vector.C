@@ -88,16 +88,30 @@ int parallel_main(int argc, char *argv[]) {
   for (long i = 0; i < numBatches; i++) {
     myVector *batchInEdges = newA(myVector, n);
     myVector *batchOutEdges = newA(myVector, n);
-    for (long i = 0; i < n; i++) { batchInEdges[i].init(); }
-    for (long i = 0; i < n; i++) { batchOutEdges[i].init(); }
+    // needed because malloc call from newA doesn't call default ctor.
+    // we may consider adding "placement new" call to newA:
+    // https://stackoverflow.com/questions/2995099/malloc-and-constructors
+    for (long i = 0; i < n; i++) { batchInEdges[i].A = NULL; }
+    for (long i = 0; i < n; i++) { batchOutEdges[i].A = NULL; }
 
     // edges seen in this batch
     for (long j = i * batchSize;
          j < min((long)(i + 1) * batchSize, (long)totalEdges); j++) {
       uintT src = G.E[j].u;
       uintT dst = G.E[j].v;
+
+      // init if this is the first time we get an out-edge for this vertex
+      if (batchOutEdges[src].A == NULL) {
+        batchOutEdges[src].init();
+      }
       batchOutEdges[src].add(dst);
+
+      // init if this is the first time we get an in-edge for this vertex
+      if (batchInEdges[dst].A == NULL) {
+        batchInEdges[dst].init();
+      }
       batchInEdges[dst].add(src);
+
       degrees[src]++;
       degrees[dst]++;
     }
@@ -111,20 +125,28 @@ int parallel_main(int argc, char *argv[]) {
 
       // new incoming edges generate 2 hop paths with new outgoing
       // edges and with existing outgoing edges
-      for (long g = 0; g < batchInEdges[k].size(); g++) {
-        for (long h = 0; h < batchOutEdges[k].size(); h++) {
-          listCount++;
-        }
-        for (long h = 0; h < outEdges[k].size(); h++) {
-          listCount++;
+      if (batchInEdges[k].A != NULL) {
+        for (long g = 0; g < batchInEdges[k].size(); g++) {
+
+          if (batchOutEdges[k].A != NULL) {
+            for (long h = 0; h < batchOutEdges[k].size(); h++) {
+              listCount++;
+            }
+          }
+
+          for (long h = 0; h < outEdges[k].size(); h++) {
+            listCount++;
+          }
         }
       }
 
       // new outgoing edges generate 2 hop paths with existing
       // incoming edges
-      for (long g = 0; g < batchOutEdges[k].size(); g++) {
-        for (long h = 0; h < inEdges[k].size(); h++) {
-          listCount++;
+      if (batchOutEdges[k].A != NULL) {
+        for (long g = 0; g < batchOutEdges[k].size(); g++) {
+          for (long h = 0; h < inEdges[k].size(); h++) {
+            listCount++;
+          }
         }
       }
     }
