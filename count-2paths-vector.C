@@ -2,55 +2,7 @@
 #include "graphIO.h"
 #include "parallel.h"
 #include "parseCommandLine.h"
-#include <list>
-#include <map>
-
-struct memoryPool {
-  long total, used;
-  uintT *pool;
-  memoryPool(long size) {
-    total = size;
-    used = 0;
-    pool = newA(uintT, size);
-  }
-  long allocate(long size) {
-    if (used + size > total) {
-      // get more memory from OS
-      cout << used << " " << size << " " << total << " get more memory\n";
-      exit(0);
-    }
-    long start = used;
-    used += size;
-    return start;
-  }
-  void del() { free(pool); }
-};
-
-struct myVector {
-  long maxSize, end;
-  uintT *A;
-  void init() {
-    maxSize = 1;
-    end = 0;
-    A = newA(uintT, maxSize);
-  }
-  void resize() {
-    uintT *B = newA(uintT, 2 * maxSize);
-    for (long i = 0; i < maxSize; i++) {
-      B[i] = A[i];
-    }
-    // free(A); //should free
-    A = B;
-    maxSize *= 2;
-  }
-  void add(uintT v) {
-    if (end == maxSize)
-      resize();
-    A[end++] = v;
-  }
-  uintT size() { return end; }
-  uintT get(uintT i) { return A[i]; }
-};
+#include "myVector.h"
 
 // Takes as input a file in SNAP format
 //(http://snap.stanford.edu/data/index.html).
