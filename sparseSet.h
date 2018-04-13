@@ -87,8 +87,7 @@ class sparseAdditiveSet {
 	return 1; //return true if value originally didn't exist
       }
       else if (TA[h].first == vkey) {
-	//add residual values on duplicate
-	writeAdd(&(TA[h].second),v.second);
+	//TO DO: fill in what to when key is already there
 	return 0;
       }
     

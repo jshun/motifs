@@ -91,8 +91,8 @@ int parallel_main(int argc, char *argv[]) {
     // needed because malloc call from newA doesn't call default ctor.
     // we may consider adding "placement new" call to newA:
     // https://stackoverflow.com/questions/2995099/malloc-and-constructors
-    for (long i = 0; i < n; i++) { batchInEdges[i].A = NULL; }
-    for (long i = 0; i < n; i++) { batchOutEdges[i].A = NULL; }
+    for (long j = 0; j < n; j++) { batchInEdges[j].A = NULL; }
+    for (long j = 0; j < n; j++) { batchOutEdges[j].A = NULL; }
 
     // edges seen in this batch
     for (long j = i * batchSize;
