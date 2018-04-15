@@ -42,12 +42,10 @@ class sparseSet {
  public:
   uintT m;
   intT mask;
-  //kvPair empty;
   myVector* vectors;
   kvPair* TA;
   float loadFactor;
 
-  // needs to be in separate routine due to Cilk bugs
   void clearA() {
     parallel_for (long i=0; i < m; i++) {
       TA[i].first = UINT_E_MAX;
@@ -78,8 +76,6 @@ class sparseSet {
       { 
 	vectors = newA(myVector,m);
 	initA();
-	//empty=make_pair(UINT_E_MAX,NULL);
-	//clearA(TA,m,empty); 
       }
 
   // Deletes the allocated arrays
@@ -92,20 +88,15 @@ class sparseSet {
   bool insert(uintE src, uintE dst) {
     uintT h = firstIndex(src);
     while (1) {
-      //kvPair c;
-      //c = TA[h];
       if(TA[h].first == UINT_E_MAX && CAS(&TA[h].first,UINT_E_MAX,src)) {
-	//cout << "a\n";
   	TA[h].second->reset(); //reset myVector to size 0
   	TA[h].second->add(dst);
-	//cout << "b\n";
   	return 1; //return true if value originally didn't exist
       }
       else if (TA[h].first == src) {
   	TA[h].second->add(dst);
   	return 0;
-      }
-    
+      }    
       // move to next bucket
       h = incrementIndex(h);
     }
