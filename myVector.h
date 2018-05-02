@@ -30,7 +30,7 @@ struct myVector {
     }
     A[end++] = v;
   }
-  // removes first occurrence of value v
+  // Removes element at index i.
   void remove(uintT i) {
     // -1 is dummy value used as deletion marker.
     if (A[i] != -1) {
@@ -40,6 +40,20 @@ struct myVector {
     // trigger garbage collection if too many have been removed.
     if (numRemoved > (size() / 2)) {
       resize(maxSize / 2);
+    }
+  }
+  // Removes first occurrence of value v.
+  void removeFirstOcurrence(uintT v) {
+    long index = -1;
+    for (long i = 0; i < end; i++) {
+      if (A[i] == v) {
+        index = i;
+        break;
+      }
+    }
+
+    if (index != -1) {
+      remove(index);
     }
   }
   uintT size() { return end; }
