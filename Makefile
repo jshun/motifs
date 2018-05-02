@@ -27,7 +27,7 @@ endif
 
 COMMON = utils.h parseCommandLine.h parallel.h quickSort.h blockRadixSort.h transpose.h gettime.h
 LOCAL_COMMON = graphIO.h sparseSet.h myVector.h
-GENERATORS = rMatGraph gridGraph randLocalGraph SNAPtoAdj wghSNAPtoAdj adjGraphAddWeights adjToBinary count-2paths count-2paths-vector
+GENERATORS = rMatGraph gridGraph randLocalGraph SNAPtoAdj wghSNAPtoAdj adjGraphAddWeights adjToBinary count-2paths count-2paths-vector count-3paths-vector
 
 .PHONY: all clean
 all: $(GENERATORS)

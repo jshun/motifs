@@ -1,2 +1,4 @@
 # binaries
-count-2paths
+count-*paths
+count-*paths-*ector
+*.dSYM/
