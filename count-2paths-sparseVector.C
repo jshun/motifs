@@ -1,8 +1,8 @@
 #include "gettime.h"
 #include "graphIO.h"
+#include "myVector.h"
 #include "parallel.h"
 #include "parseCommandLine.h"
-#include "myVector.h"
 #include "sparseSet.h"
 
 // Takes as input a file in SNAP format
@@ -27,7 +27,7 @@ int parallel_main(int argc, char *argv[]) {
 
   myVector *inEdges = newA(myVector, n);
   myVector *outEdges = newA(myVector, n);
- 
+
   for (long i = 0; i < n; i++) {
     inEdges[i].init();
     outEdges[i].init();
@@ -36,12 +36,12 @@ int parallel_main(int argc, char *argv[]) {
   long numBatches = 1 + (totalEdges - 1) / batchSize;
   long listCount = 0;
 
-  //sparseSets to store the in/out edges in a batch
-  sparseSet batchInEdges = sparseSet(batchSize,1);
-  sparseSet batchOutEdges = sparseSet(batchSize,1);
+  // sparseSets to store the in/out edges in a batch
+  sparseSet batchInEdges = sparseSet(batchSize, 1);
+  sparseSet batchOutEdges = sparseSet(batchSize, 1);
 
   for (long i = 0; i < numBatches; i++) {
-    //clear sparseSets
+    // clear sparseSets
     batchInEdges.clearA();
     batchOutEdges.clearA();
 
@@ -50,75 +50,76 @@ int parallel_main(int argc, char *argv[]) {
          j < min((long)(i + 1) * batchSize, (long)totalEdges); j++) {
       uintT src = G.E[j].u;
       uintT dst = G.E[j].v;
-      batchOutEdges.insert(src,dst);      
-      batchInEdges.insert(dst,src);
+      batchOutEdges.insert(src, dst);
+      batchInEdges.insert(dst, src);
     }
 
-    //extract the entries from the sparseSets.  In.A is an array of
-    //pairs (a,b) where a is the vertex id and b is a pointer to its
-    //myVector of in-edges.  Out.A is an array of pairs (a,b) where a
-    //is the vertex id and b is a pointer to its myVector of
-    //out-edges.
+    // extract the entries from the sparseSets.  In.A is an array of
+    // pairs (a,b) where a is the vertex id and b is a pointer to its
+    // myVector of in-edges.  Out.A is an array of pairs (a,b) where a
+    // is the vertex id and b is a pointer to its myVector of
+    // out-edges.
     _seq<kvPair> In = batchInEdges.entries();
     _seq<kvPair> Out = batchOutEdges.entries();
 
-    //loop through all vertices in batch with in-neighbors
-    for(long k = 0; k < In.n; k++) {
+    // loop through all vertices in batch with in-neighbors
+    for (long k = 0; k < In.n; k++) {
       uintE v = In.A[k].first;
-      myVector* vIn = In.A[k].second;
-      //intersect vertex v's in-neighbors with its
-      //out-neighbors from batch
-      myVector* vOut = batchOutEdges.find(v);
-      if(vOut != NULL) {
-	for(long g = 0; g < vIn->size(); g++) {
-	  for(long h = 0; h < vOut->size(); h++) {
-	    listCount++;
-	  }
-	}
+      myVector *vIn = In.A[k].second;
+      // intersect vertex v's in-neighbors with its
+      // out-neighbors from batch
+      myVector *vOut = batchOutEdges.find(v);
+      if (vOut != NULL) {
+        for (long g = 0; g < vIn->size(); g++) {
+          for (long h = 0; h < vOut->size(); h++) {
+            listCount++;
+          }
+        }
       }
 
-      //intersect vertex v's in-neighbors with its
-      //out-neighbors from existing graph
-      for(long h = 0; h < outEdges[v].size(); h++) {
-	for(long g = 0; g < vIn->size(); g++) {
-	  listCount++;
-	}
+      // intersect vertex v's in-neighbors with its
+      // out-neighbors from existing graph
+      for (long h = 0; h < outEdges[v].size(); h++) {
+        for (long g = 0; g < vIn->size(); g++) {
+          listCount++;
+        }
       }
     }
 
-    for(long k = 0; k < Out.n; k++) {
+    for (long k = 0; k < Out.n; k++) {
       uintE v = Out.A[k].first;
-      myVector* vOut = Out.A[k].second;
-      //intersect vertex v's out-neighbors with its
-      //in-neighbors from existing graph
-      for(long h = 0; h < inEdges[v].size(); h++) {
-	for(long g = 0; g < vOut->size(); g++) {
-	  listCount++;
-	}
+      myVector *vOut = Out.A[k].second;
+      // intersect vertex v's out-neighbors with its
+      // in-neighbors from existing graph
+      for (long h = 0; h < inEdges[v].size(); h++) {
+        for (long g = 0; g < vOut->size(); g++) {
+          listCount++;
+        }
       }
     }
 
-
-    //add batch edges to graph
-    for(long k = 0; k < In.n; k++) {
+    // add batch edges to graph
+    for (long k = 0; k < In.n; k++) {
       uintE v = In.A[k].first;
-      myVector* vIn = In.A[k].second;
-      for(long g = 0; g < vIn->size(); g++) {
-    	inEdges[v].add(vIn->get(g));
+      myVector *vIn = In.A[k].second;
+      for (long g = 0; g < vIn->size(); g++) {
+        inEdges[v].add(vIn->get(g));
       }
     }
 
-    for(long k = 0; k < Out.n; k++) {
+    for (long k = 0; k < Out.n; k++) {
       uintE v = Out.A[k].first;
-      myVector* vOut = Out.A[k].second;
-      for(long g = 0; g < vOut->size(); g++) {
-    	outEdges[v].add(vOut->get(g));
+      myVector *vOut = Out.A[k].second;
+      for (long g = 0; g < vOut->size(); g++) {
+        outEdges[v].add(vOut->get(g));
       }
     }
 
-    In.del(); Out.del();
+    In.del();
+    Out.del();
 
-    //another way to add batch edges to graph. cache locality seems to be worse.
+    // another way to add batch edges to graph. cache locality seems to be
+    // worse.
     // for (long j = i * batchSize;
     //      j < min((long)(i + 1) * batchSize, (long)totalEdges); j++) {
     //   uintT src = G.E[j].u;
@@ -131,14 +132,15 @@ int parallel_main(int argc, char *argv[]) {
   cout << "total count via listing = " << listCount << endl;
   t.reportTotal("total time");
 
-  //check answer
+  // check answer
   long checkCount = 0;
-  for(long i=0;i<n;i++) {
+  for (long i = 0; i < n; i++) {
     checkCount += outEdges[i].size() * inEdges[i].size();
   }
   cout << "expected count = " << checkCount << endl;
 
-  batchInEdges.del(); batchOutEdges.del();
+  batchInEdges.del();
+  batchOutEdges.del();
   free(inEdges);
   free(outEdges);
 }
