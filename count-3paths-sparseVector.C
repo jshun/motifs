@@ -75,13 +75,18 @@ int parallel_main(int argc, char *argv[]) {
           for (long h = 0; h < vOut->size(); h++) {
             listCount++;
 
-            // 3rd hop for every out neighbor
+            // 3rd hop for every out neighbor (edges in the batch)
             uintE v2 = vOut->get(h);
             myVector *vOut2 = batchOutEdges.find(v2);
             if (vOut2 != NULL) {
               for (long h2 = 0; h2 < vOut2->size(); h2++) {
                 listCount3Hop++;
               }
+            }
+
+            // 3rd hop for every out neighbor (edges already in the graph)
+            for (long h2 = 0; h2 < outEdges[v2].size(); h2++) {
+              listCount3Hop++;
             }
           }
         }
@@ -93,14 +98,18 @@ int parallel_main(int argc, char *argv[]) {
         for (long g = 0; g < vIn->size(); g++) {
           listCount++;
 
-          // and for every in-neighbor, we go an extra level to get 3-edge
-          // paths.
+          // 3rd hop for every in-neighbor (edges in the batch)
           uintE v2 = vIn->get(g);
           myVector *vIn2 = batchInEdges.find(v2);
           if (vIn2 != NULL) {
             for (long g2 = 0; g2 < vIn2->size(); g2++) {
               listCount3Hop++;
             }
+          }
+
+          // 3rd hop for every in-neighbor (edges already in the graph)
+          for (long h2 = 0; h2 < inEdges[v2].size(); h2++) {
+            listCount3Hop++;
           }
         }
       }
@@ -115,14 +124,18 @@ int parallel_main(int argc, char *argv[]) {
         for (long g = 0; g < vOut->size(); g++) {
           listCount++;
 
-          // and for every out-neighbor, we go an extra level to get 3-edge
-          // paths.
+          // 3rd hop for every out-neighbor (edges in the batch)
           uintE v2 = vOut->get(g);
           myVector *vOut2 = batchOutEdges.find(v2);
           if (vOut2 != NULL) {
             for (long g2 = 0; g2 < vOut2->size(); g2++) {
               listCount3Hop++;
             }
+          }
+
+          // 3rd hop for every out-neighbor (edges in the graph)
+          for (long h2 = 0; h2 < outEdges[v2].size(); h2++) {
+            listCount3Hop++;
           }
         }
       }
