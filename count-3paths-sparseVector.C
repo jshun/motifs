@@ -97,43 +97,43 @@ int parallel_main(int argc, char *argv[]) {
       myVector *bOut = batchOutEdges.find(v);
       if (bOut != NULL) {
         // 1st hop: BatchIn
-        for (long g = 0; g < bIn->size(); g++) {
+        for (long hop1 = 0; hop1 < bIn->size(); hop1++) {
           // 2nd hop: BatchOut
-          for (long h = 0; h < bOut->size(); h++) {
+          for (long hop2 = 0; hop2 < bOut->size(); hop2++) {
             // 2-hop config: BatchIn -> BatchOut
             listCount2Hop++;
 
             // 3rd hop: BatchOut
-            uintE v2 = bOut->get(h);
+            uintE v2 = bOut->get(hop2);
             myVector *bOut2 = batchOutEdges.find(v2);
             if (bOut2 != NULL) {
-              for (long h2 = 0; h2 < bOut2->size(); h2++) {
+              for (long hop3 = 0; hop3 < bOut2->size(); hop3++) {
                 // 3-hop config: BatchIn -> BatchOut -> BatchOut
                 listCount3Hop++;
               }
             }
 
             // 3rd hop: ProcessedOut
-            for (long h2 = 0; h2 < processedOutEdges[v2].size(); h2++) {
+            for (long hop3 = 0; hop3 < processedOutEdges[v2].size(); hop3++) {
               // 3-hop config: BatchIn -> BatchOut -> ProcessedOut
               listCount3Hop++;
             }
           } // end 2nd hop
 
           // 2nd hop: ProcessedOut
-          for (long h = 0; h < processedOutEdges[v].size(); h++) {
+          for (long hop2 = 0; hop2 < processedOutEdges[v].size(); hop2++) {
             // 3rd hop: BatchOut
-            uintE v2 = bOut->get(h);
+            uintE v2 = bOut->get(hop2);
             myVector *bOut2 = batchOutEdges.find(v2);
             if (bOut2 != NULL) {
-              for (long h2 = 0; h2 < bOut2->size(); h2++) {
+              for (long hop3 = 0; hop3 < bOut2->size(); hop3++) {
                 // 3-hop config: BatchIn -> ProcessedOut -> BatchOut
                 listCount3Hop++;
               }
             }
 
             // 3rd hop: ProcessedOut
-            for (long h2 = 0; h2 < processedOutEdges[v2].size(); h2++) {
+            for (long hop3 = 0; hop3 < processedOutEdges[v2].size(); hop3++) {
               // 3-hop config: BatchIn -> ProcessedOut -> ProcessedOut
               listCount3Hop++;
             }
@@ -145,36 +145,36 @@ int parallel_main(int argc, char *argv[]) {
       // out-neighbors from existing graph
       //
       // 1st hop: ProcessedOut
-      for (long h = 0; h < processedOutEdges[v].size(); h++) {
+      for (long hop1 = 0; hop1 < processedOutEdges[v].size(); hop1++) {
         // 2nd hop: BatchIn
-        for (long g = 0; g < bIn->size(); g++) {
+        for (long hop2 = 0; hop2 < bIn->size(); hop2++) {
           // 2-hop config: ProcessedOut -> BatchIn
           listCount2Hop++;
 
           // 3rd hop: BatchIn
-          uintE v2 = bIn->get(g);
+          uintE v2 = bIn->get(hop2);
           myVector *bIn2 = batchInEdges.find(v2);
           if (bIn2 != NULL) {
-            for (long g2 = 0; g2 < bIn2->size(); g2++) {
+            for (long hop3 = 0; hop3 < bIn2->size(); hop3++) {
               // 3-hop config: ProcessedOut -> BatchIn -> BatchIn
               listCount3Hop++;
             }
           }
 
           // 3rd hop: ProcessedIn
-          for (long h2 = 0; h2 < processedInEdges[v2].size(); h2++) {
+          for (long hop3 = 0; hop3 < processedInEdges[v2].size(); hop3++) {
             // 3-hop config: ProcessedOut -> BatchIn -> ProcessedIn
             listCount3Hop++;
           }
         } // end 2nd hop: BatchIn
 
         // 2nd hop: ProcessedIn
-        for (long g = 0; g < processedInEdges[v].size(); g++) {
+        for (long hop2 = 0; hop2 < processedInEdges[v].size(); hop2++) {
           // 3rd hop: BatchIn
-          uintE v2 = bIn->get(g);
+          uintE v2 = bIn->get(hop2);
           myVector *bIn2 = batchInEdges.find(v2);
           if (bIn2 != NULL) {
-            for (long g2 = 0; g2 < bIn2->size(); g2++) {
+            for (long hop3 = 0; hop3 < bIn2->size(); hop3++) {
               // 3-hop config: ProcessedOut -> ProcessedIn -> BatchIn
               listCount3Hop++;
             }
@@ -195,37 +195,37 @@ int parallel_main(int argc, char *argv[]) {
       // in-neighbors from existing graph
       //
       // 1st hop: ProcessedIn
-      for (long h = 0; h < processedInEdges[v].size(); h++) {
+      for (long hop1 = 0; hop1 < processedInEdges[v].size(); hop1++) {
         // 2nd hop: BatchOut
-        for (long g = 0; g < bOut->size(); g++) {
+        for (long hop2 = 0; hop2 < bOut->size(); hop2++) {
           // 2-hop config: ProcessedIn -> BatchOut
           listCount2Hop++;
 
           // 3rd hop: BatchOut
-          uintE v2 = bOut->get(g);
+          uintE v2 = bOut->get(hop2);
           myVector *bOut2 = batchOutEdges.find(v2);
           if (bOut2 != NULL) {
-            for (long g2 = 0; g2 < bOut2->size(); g2++) {
+            for (long hop3 = 0; hop3 < bOut2->size(); hop3++) {
               // 3-hop config: ProcessedIn -> BatchOut -> BatchOut
               listCount3Hop++;
             }
           }
 
           // 3rd hop: ProcessedOut
-          for (long h2 = 0; h2 < processedOutEdges[v2].size(); h2++) {
+          for (long hop3 = 0; hop3 < processedOutEdges[v2].size(); hop3++) {
             // 3-hop config: ProcessedIn -> BatchOut -> ProcessedOut
             listCount3Hop++;
           }
         } // end 2nd hop: BatchOut
 
         // 2nd hop: ProcessedOut
-        for (long g = 0; g < processedOutEdges[v].size(); g++) {
+        for (long hop2 = 0; hop2 < processedOutEdges[v].size(); hop2++) {
 
           // 3rd hop: BatchOut
-          uintE v2 = bOut->get(g);
+          uintE v2 = bOut->get(hop2);
           myVector *bOut2 = batchOutEdges.find(v2);
           if (bOut2 != NULL) {
-            for (long g2 = 0; g2 < bOut2->size(); g2++) {
+            for (long hop3 = 0; hop3 < bOut2->size(); hop3++) {
               // 3-hop config: ProcessedIn -> ProcessedOut -> BatchOut
               listCount3Hop++;
             }
@@ -236,13 +236,13 @@ int parallel_main(int argc, char *argv[]) {
       } // end 1st hop
 
       // 1st hop: BatchOut
-      for (long g = 0; g < bOut->size(); g++) {
+      for (long hop1 = 0; hop1 < bOut->size(); hop1++) {
         // 2nd hop: BatchIn
         if (bIn != NULL) {
-          for (long h = 0; h < bIn->size(); h++) {
+          for (long hop2 = 0; hop2 < bIn->size(); hop2++) {
             // 3rd hop: ProcessedIn
-            uintE v2 = bIn->get(h);
-            for (long h2 = 0; h2 < processedInEdges[v2].size(); h2++) {
+            uintE v2 = bIn->get(hop2);
+            for (long hop3 = 0; hop3 < processedInEdges[v2].size(); hop3++) {
               // 3-hop config: BatchOut -> BatchIn -> ProcessedIn
               listCount3Hop++;
             }
@@ -250,16 +250,16 @@ int parallel_main(int argc, char *argv[]) {
         }
 
         // 2nd hop: ProcessedIn
-        for (long h = 0; h < processedInEdges[v].size(); h++) {
-          uintE v2 = bIn->get(h);
+        for (long hop2 = 0; hop2 < processedInEdges[v].size(); hop2++) {
+          uintE v2 = bIn->get(hop2);
           myVector *bIn2 = batchInEdges.find(v2);
           if (bIn2 != NULL) {
-            for (long h2 = 0; h2 < bIn2->size(); h2++) {
+            for (long hop3 = 0; hop3 < bIn2->size(); hop3++) {
               // 3-hop config: BatchOut -> ProcessedIn -> BatchIn
               listCount3Hop++;
             }
 
-            for (long h2 = 0; h2 < processedInEdges[v2].size(); h2++) {
+            for (long hop3 = 0; hop3 < processedInEdges[v2].size(); hop3++) {
               // 3-hop config: BatchOut -> ProcessedIn -> ProcessedIn
               listCount3Hop++;
             }
