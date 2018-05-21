@@ -4,6 +4,45 @@
 #include "parallel.h"
 #include "parseCommandLine.h"
 #include "sparseSet.h"
+#include <math.h>
+
+// n choose k in O(k) time
+long binomialCoeff(long n, long k) {
+  long coeff = 1;
+
+  if (k > n - k) {
+    k = n - k;
+  }
+
+  for (long i = 0; i < k; ++i) {
+    coeff *= (n - i);
+    coeff /= (i + 1);
+  }
+
+  return coeff;
+}
+
+// from Julian: a lower bound estimate on number of edges in k-hop directed
+// spanner may be (n choose (k+1)) * (m/(n choose 2))^k
+long lowerBoundEstimate(long numNodes, long numEdges, long k) {
+  long kPlus1NodeGroupings = binomialCoeff(numNodes, k + 1); // n choose (k+1)
+  long numNodePairings = binomialCoeff(numNodes, 2);         // n choose 2
+  double num1HopPaths = (double)numEdges / (double)numNodePairings;
+
+  return (long)(kPlus1NodeGroupings * pow(num1HopPaths, k));
+}
+
+// from Julian: an estimate which is unlikely to be either upper or lower bound
+// for number of edges in directed k-hop spanner:
+long notSureIfUpperOrLowerEstimate(long numNodes, double avgDegree, long k) {
+  return (long)(numNodes * pow(avgDegree, k));
+}
+
+// from Julian: an estimate which is likely to be a very loose upper bound
+// for number of edges in directed k-hop spanner:
+long looseUpperBound(long numNodes, long maxDegree, long k) {
+  return (long)(pow(numNodes * (double)maxDegree, k));
+}
 
 // Takes as input a file in SNAP format
 //(http://snap.stanford.edu/data/index.html).
@@ -20,10 +59,18 @@ int parallel_main(int argc, char *argv[]) {
 
   // minimum of totalEdges and number of edges in the graph
   totalEdges = min(totalEdges, (long)G.nonZeros);
+  long n = max(G.numRows, G.numCols); // number of vertices
+  cout << "G.numRows = " << G.numRows << ", G.numCols = " << G.numCols << endl;
+
+  // stats
+  double avgDegree = (double)(2 * totalEdges) / (double)n;
+  cout << "#nodes = " << n << ", #edges = " << totalEdges
+       << ", avg degree = " << avgDegree << endl;
+
+  // start!
   cout << "starting timer\n";
   timer t;
   t.start();
-  long n = max(G.numRows, G.numCols); // number of vertices
 
   // edges that we have already batch processed
   myVector *processedInEdges = newA(myVector, n);
@@ -108,14 +155,22 @@ int parallel_main(int argc, char *argv[]) {
             myVector *bOut2 = batchOutEdges.find(v2);
             if (bOut2 != NULL) {
               for (long hop3 = 0; hop3 < bOut2->size(); hop3++) {
-                // 3-hop config: BatchIn -> BatchOut -> BatchOut
+// 3-hop config: BatchIn -> BatchOut -> BatchOut
+#ifdef NDEBUG
+                cout << "BIn -> BOut -> BOut: " << v << " -> " << v2 << " -> "
+                     << bOut2->get(hop3) << endl;
+#endif
                 listCount3Hop++;
               }
             }
 
             // 3rd hop: ProcessedOut
             for (long hop3 = 0; hop3 < processedOutEdges[v2].size(); hop3++) {
-              // 3-hop config: BatchIn -> BatchOut -> ProcessedOut
+// 3-hop config: BatchIn -> BatchOut -> ProcessedOut
+#ifdef NDEBUG
+              cout << "BIn -> BOut -> POut: " << v << " -> " << v2 << " -> "
+                   << processedOutEdges[v2].get(hop3) << endl;
+#endif
               listCount3Hop++;
             }
           } // end 2nd hop
@@ -127,14 +182,22 @@ int parallel_main(int argc, char *argv[]) {
             myVector *bOut2 = batchOutEdges.find(v2);
             if (bOut2 != NULL) {
               for (long hop3 = 0; hop3 < bOut2->size(); hop3++) {
-                // 3-hop config: BatchIn -> ProcessedOut -> BatchOut
+// 3-hop config: BatchIn -> ProcessedOut -> BatchOut
+#ifdef NDEBUG
+                cout << "BIn -> POut -> BOut: " << v << " -> " << v2 << " -> "
+                     << bOut2->get(hop3) << endl;
+#endif
                 listCount3Hop++;
               }
             }
 
             // 3rd hop: ProcessedOut
             for (long hop3 = 0; hop3 < processedOutEdges[v2].size(); hop3++) {
+#ifdef NDEBUG
               // 3-hop config: BatchIn -> ProcessedOut -> ProcessedOut
+              cout << "BIn -> POut -> POut: " << v << " -> " << v2 << " -> "
+                   << processedOutEdges[v2].get(hop3) << endl;
+#endif
               listCount3Hop++;
             }
           } // end 2nd hop
@@ -156,14 +219,22 @@ int parallel_main(int argc, char *argv[]) {
           myVector *bIn2 = batchInEdges.find(v2);
           if (bIn2 != NULL) {
             for (long hop3 = 0; hop3 < bIn2->size(); hop3++) {
-              // 3-hop config: ProcessedOut -> BatchIn -> BatchIn
+// 3-hop config: ProcessedOut -> BatchIn -> BatchIn
+#ifdef NDEBUG
+              cout << "POut -> BIn -> BIn: " << v << " -> " << v2 << " -> "
+                   << bIn2->get(hop3) << endl;
+#endif
               listCount3Hop++;
             }
           }
 
           // 3rd hop: ProcessedIn
           for (long hop3 = 0; hop3 < processedInEdges[v2].size(); hop3++) {
-            // 3-hop config: ProcessedOut -> BatchIn -> ProcessedIn
+// 3-hop config: ProcessedOut -> BatchIn -> ProcessedIn
+#ifdef NDEBUG
+            cout << "POut -> BIn -> PIn: " << v << " -> " << v2 << " -> "
+                 << processedInEdges[v2].get(hop3) << endl;
+#endif
             listCount3Hop++;
           }
         } // end 2nd hop: BatchIn
@@ -175,7 +246,11 @@ int parallel_main(int argc, char *argv[]) {
           myVector *bIn2 = batchInEdges.find(v2);
           if (bIn2 != NULL) {
             for (long hop3 = 0; hop3 < bIn2->size(); hop3++) {
-              // 3-hop config: ProcessedOut -> ProcessedIn -> BatchIn
+// 3-hop config: ProcessedOut -> ProcessedIn -> BatchIn
+#ifdef NDEBUG
+              cout << "POut -> PIn -> BIn: " << v << " -> " << v2 << " -> "
+                   << bIn2->get(hop3) << endl;
+#endif
               listCount3Hop++;
             }
           }
@@ -206,14 +281,22 @@ int parallel_main(int argc, char *argv[]) {
           myVector *bOut2 = batchOutEdges.find(v2);
           if (bOut2 != NULL) {
             for (long hop3 = 0; hop3 < bOut2->size(); hop3++) {
-              // 3-hop config: ProcessedIn -> BatchOut -> BatchOut
+// 3-hop config: ProcessedIn -> BatchOut -> BatchOut
+#ifdef NDEBUG
+              cout << "PIn -> BOut -> BOut: " << v << " -> " << v2 << " -> "
+                   << bOut2->get(hop3) << endl;
+#endif
               listCount3Hop++;
             }
           }
 
           // 3rd hop: ProcessedOut
           for (long hop3 = 0; hop3 < processedOutEdges[v2].size(); hop3++) {
-            // 3-hop config: ProcessedIn -> BatchOut -> ProcessedOut
+// 3-hop config: ProcessedIn -> BatchOut -> ProcessedOut
+#ifdef NDEBUG
+            cout << "PIn -> BOut -> POut: " << v << " -> " << v2 << " -> "
+                 << processedOutEdges[v2].get(hop3) << endl;
+#endif
             listCount3Hop++;
           }
         } // end 2nd hop: BatchOut
@@ -226,7 +309,11 @@ int parallel_main(int argc, char *argv[]) {
           myVector *bOut2 = batchOutEdges.find(v2);
           if (bOut2 != NULL) {
             for (long hop3 = 0; hop3 < bOut2->size(); hop3++) {
-              // 3-hop config: ProcessedIn -> ProcessedOut -> BatchOut
+// 3-hop config: ProcessedIn -> ProcessedOut -> BatchOut
+#ifdef NDEBUG
+              cout << "PIn -> POut -> BOut: " << v << " -> " << v2 << " -> "
+                   << bOut2->get(hop3) << endl;
+#endif
               listCount3Hop++;
             }
           }
@@ -237,13 +324,32 @@ int parallel_main(int argc, char *argv[]) {
 
       // 1st hop: BatchOut
       for (long hop1 = 0; hop1 < bOut->size(); hop1++) {
+
+        // 2nd hop: ProcessedOut
+        for (long hop2 = 0; hop2 < processedOutEdges[v].size(); hop2++) {
+          uintE v2 = processedOutEdges[v].get(hop2);
+
+          for (long hop3 = 0; hop3 < processedOutEdges[v2].size(); hop3++) {
+// 3-hop config: BatchOut -> ProcessedOut -> ProcessedOut
+#ifdef NDEBUG
+            cout << "BOut -> POut -> POut: " << v << " -> " << v2 << " -> "
+                 << processedOutEdges[v2].get(hop3) << endl;
+#endif
+            listCount3Hop++;
+          }
+        } // end 2nd hop: ProcessedOut
+
         // 2nd hop: BatchIn
         if (bIn != NULL) {
           for (long hop2 = 0; hop2 < bIn->size(); hop2++) {
             // 3rd hop: ProcessedIn
             uintE v2 = bIn->get(hop2);
             for (long hop3 = 0; hop3 < processedInEdges[v2].size(); hop3++) {
-              // 3-hop config: BatchOut -> BatchIn -> ProcessedIn
+// 3-hop config: BatchOut -> BatchIn -> ProcessedIn
+#ifdef NDEBUG
+              cout << "BOut -> BIn -> PIn: " << v << " -> " << v2 << " -> "
+                   << processedInEdges[v2].get(hop3) << endl;
+#endif
               listCount3Hop++;
             }
           } // end 2nd hop: BatchIn
@@ -255,12 +361,20 @@ int parallel_main(int argc, char *argv[]) {
           myVector *bIn2 = batchInEdges.find(v2);
           if (bIn2 != NULL) {
             for (long hop3 = 0; hop3 < bIn2->size(); hop3++) {
-              // 3-hop config: BatchOut -> ProcessedIn -> BatchIn
+// 3-hop config: BatchOut -> ProcessedIn -> BatchIn
+#ifdef NDEBUG
+              cout << "BOut -> PIn -> BIn: " << v << " -> " << v2 << " -> "
+                   << bIn2->get(hop3) << endl;
+#endif
               listCount3Hop++;
             }
 
             for (long hop3 = 0; hop3 < processedInEdges[v2].size(); hop3++) {
-              // 3-hop config: BatchOut -> ProcessedIn -> ProcessedIn
+// 3-hop config: BatchOut -> ProcessedIn -> ProcessedIn
+#ifdef NDEBUG
+              cout << "BOut -> PIn -> PIn: " << v << " -> " << v2 << " -> "
+                   << processedInEdges[v2].get(hop3) << endl;
+#endif
               listCount3Hop++;
             }
           }
@@ -302,8 +416,8 @@ int parallel_main(int argc, char *argv[]) {
     // }
   }
 
-  cout << "total count via listing (2 hops) = " << listCount2Hop << endl;
-  cout << "total count via listing (3 hops) = " << listCount3Hop << endl;
+  cout << "total #paths via listing (2 hops) = " << listCount2Hop << endl;
+  cout << "total #paths via listing (3 hops) = " << listCount3Hop << endl;
   t.reportTotal("total time");
 
   // check answer
@@ -311,7 +425,25 @@ int parallel_main(int argc, char *argv[]) {
   for (long i = 0; i < n; i++) {
     checkCount += processedOutEdges[i].size() * processedInEdges[i].size();
   }
-  cout << "expected count = " << checkCount << endl;
+  cout << "expected #paths count (2 hops) = " << checkCount << endl;
+
+  // different estimates for size in number of edges:
+  // 2-hop:
+  cout << endl
+       << "actual #edges in 2-hop spanner = " << listCount2Hop * 2 << endl;
+  cout << "estimated #edges (lower bound) = "
+       << lowerBoundEstimate(n, totalEdges, 2) << endl;
+
+  cout << "estimated #edges (neither lower nor upper) = "
+       << notSureIfUpperOrLowerEstimate(n, avgDegree, 2) << endl;
+  // 3-hop:
+  cout << endl
+       << "actual #edges in 3-hop spanner = " << listCount3Hop * 3 << endl;
+  cout << "estimated #edges (lower bound) = "
+       << lowerBoundEstimate(n, totalEdges, 3) << endl;
+
+  cout << "estimated #edges (neither lower nor upper) = "
+       << notSureIfUpperOrLowerEstimate(n, avgDegree, 3) << endl;
 
   batchInEdges.del();
   batchOutEdges.del();
