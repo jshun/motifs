@@ -1,5 +1,6 @@
 # binaries
 count-*paths
 count-*paths-*ector
+streamAppDAGGenerator
 SNAPtoSequentialVerticesSNAP
 *.dSYM/

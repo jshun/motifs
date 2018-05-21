@@ -5,6 +5,14 @@
 #include "parseCommandLine.h"
 #include "sparseSet.h"
 #include <math.h>
+#include <vector> // used to calculate median for "view size" estimates
+
+// median (used for "view size" estimates)
+long median(vector<long> &v) {
+  size_t n = v.size() / 2;
+  nth_element(v.begin(), v.begin() + n, v.end());
+  return v[n];
+}
 
 // n choose k in O(k) time
 long binomialCoeff(long n, long k) {
@@ -22,14 +30,35 @@ long binomialCoeff(long n, long k) {
   return coeff;
 }
 
+// the fill of a network is the proportion of edges to the total number of
+// possible edges:
+// http://konect.uni-koblenz.de/statistics/fill
+double fill(long numNodes, long numEdges) {
+  return (double)numEdges / ((double)numNodes * ((double)numNodes - 1));
+}
+
 // from Julian: a lower bound estimate on number of edges in k-hop directed
 // spanner may be (n choose (k+1)) * (m/(n choose 2))^k
 long lowerBoundEstimate(long numNodes, long numEdges, long k) {
-  long kPlus1NodeGroupings = binomialCoeff(numNodes, k + 1); // n choose (k+1)
-  long numNodePairings = binomialCoeff(numNodes, 2);         // n choose 2
-  double num1HopPaths = (double)numEdges / (double)numNodePairings;
+  // 2 different ways of calculating the number of possible k-hop paths:
+  long numPossibleKHopPaths = binomialCoeff(numNodes, k + 1); // n choose (k+1)
+  long numPossibleKHopPaths2 = 1;
+  for (long i = 0; i < k + 1; i++) {
+    numPossibleKHopPaths2 *= numNodes - i;
+  }
 
-  return (long)(kPlus1NodeGroupings * pow(num1HopPaths, k));
+  // 2 different ways of calculating the number of possible edges:
+  long numPossibleEdges = binomialCoeff(numNodes, 2);
+  long numPossibleEdges2 = numNodes * (numNodes - 1);
+
+  //  double num1HopPaths = (double)numEdges / (double)numPossibleEdges;
+  double num1HopPaths = (double)numEdges / (double)numPossibleEdges2;
+
+  //  long estimate = (long)((double)numPossibleKHopPaths * pow(num1HopPaths,
+  //  k));
+  long estimate = (long)((double)numPossibleKHopPaths2 * pow(num1HopPaths, k));
+
+  return estimate;
 }
 
 // from Julian: an estimate which is unlikely to be either upper or lower bound
@@ -38,10 +67,25 @@ long notSureIfUpperOrLowerEstimate(long numNodes, double avgDegree, long k) {
   return (long)(numNodes * pow(avgDegree, k));
 }
 
+// same as above, but taking into account the fill.
+long notSureIfUpperOrLowerEstimateWithFill(long numNodes, long numEdges,
+                                           double avgDegree, long k) {
+  return (long)(numNodes * pow(avgDegree, k) * fill(numNodes, numEdges));
+}
+
 // from Julian: an estimate which is likely to be a very loose upper bound
 // for number of edges in directed k-hop spanner:
 long looseUpperBound(long numNodes, long maxDegree, long k) {
   return (long)(pow(numNodes * (double)maxDegree, k));
+}
+
+// similar to above, but trying to incorporate fill into it.
+long looseUpperBoundWithFillFactor(long numNodes, long numEdges, long maxDegree,
+                                   long k) {
+  // if we assume G is a DAG, then fill is:
+  double upperBound = looseUpperBound(numNodes, maxDegree, k);
+
+  return (long)(upperBound * fill(numNodes, numEdges));
 }
 
 // Takes as input a file in SNAP format
@@ -427,23 +471,94 @@ int parallel_main(int argc, char *argv[]) {
   }
   cout << "expected #paths count (2 hops) = " << checkCount << endl;
 
+  // max degree is in used in one of the spanner size estimates:
+  long maxDegree = 0;
+  long maxOutDegree = 0;
+  vector<long> degrees;
+  vector<long> outDegrees;
+  for (long i = 0; i < processedInEdges->size(); i++) {
+    long degree = processedInEdges[i].size() + processedOutEdges[i].size();
+    maxDegree = max(maxDegree, degree);
+    maxOutDegree = max(maxOutDegree, (long)processedOutEdges[i].size());
+    degrees.push_back(degree);
+    outDegrees.push_back(processedOutEdges[i].size());
+  }
+  long medianDegree = median(degrees);
+  long medianOutDegree = median(outDegrees);
+  cout << "maxDegree = " << maxDegree << endl;
+  cout << "medianDegree = " << medianDegree << endl;
+  cout << "medianOutDegree = " << medianOutDegree << endl;
+
   // different estimates for size in number of edges:
   // 2-hop:
   cout << endl
        << "actual #edges in 2-hop spanner = " << listCount2Hop * 2 << endl;
-  cout << "estimated #edges (lower bound) = "
+  cout << "1. estimated #edges (lower bound) = "
        << lowerBoundEstimate(n, totalEdges, 2) << endl;
-
-  cout << "estimated #edges (neither lower nor upper) = "
+  cout << "2a. estimated #edges (neither lower nor upper) = "
        << notSureIfUpperOrLowerEstimate(n, avgDegree, 2) << endl;
+  cout << "2b. estimated #edges (neither lower nor upper w/ medianDegree) = "
+       << notSureIfUpperOrLowerEstimate(n, medianDegree, 2) << endl;
+  cout << "2c. estimated #edges (neither lower nor upper w/ medianOutDegree) = "
+       << notSureIfUpperOrLowerEstimate(n, medianOutDegree, 2) << endl;
+  cout << "estimated #edges (neither lower nor upper w/ fill) = "
+       << notSureIfUpperOrLowerEstimateWithFill(n, totalEdges, avgDegree, 2)
+       << endl;
+  cout << "estimated #edges (neither lower nor upper w/ fill and medianDegree) "
+          "= "
+       << notSureIfUpperOrLowerEstimateWithFill(n, totalEdges, medianDegree, 2)
+       << endl;
+  cout << "estimated #edges (neither lower nor upper w/ fill and "
+          "medianOutDegree) = "
+       << notSureIfUpperOrLowerEstimateWithFill(n, totalEdges, medianOutDegree,
+                                                2)
+       << endl;
+  cout << "3a. estimated #edges (loose upper) = "
+       << looseUpperBound(n, maxDegree, 2) << endl;
+  cout << "estimated #edges (loose upper w/ fill) = "
+       << looseUpperBoundWithFillFactor(n, totalEdges, maxDegree, 2) << endl;
+  cout << "estimated #edges on 2-hop path (from paper) = "
+       << 1.0 / 2.0 * 2.0 * avgDegree * (double)n << endl;
+  cout << "estimated #edges (tighter loose upper) = "
+       << looseUpperBound(n, medianDegree, 2) << endl;
+  cout << "3f. estimated #edges (tighter loose upper w/ fill) = "
+       << looseUpperBoundWithFillFactor(n, totalEdges, medianDegree, 2) << endl;
+
   // 3-hop:
   cout << endl
        << "actual #edges in 3-hop spanner = " << listCount3Hop * 3 << endl;
-  cout << "estimated #edges (lower bound) = "
+  cout << "1. estimated #edges (lower bound) = "
        << lowerBoundEstimate(n, totalEdges, 3) << endl;
-
-  cout << "estimated #edges (neither lower nor upper) = "
+  cout << "2a. estimated #edges (neither lower nor upper) = "
        << notSureIfUpperOrLowerEstimate(n, avgDegree, 3) << endl;
+  cout << "2b. estimated #edges (neither lower nor upper w/ medianDegree) = "
+       << notSureIfUpperOrLowerEstimate(n, medianDegree, 3) << endl;
+  cout << "2c. estimated #edges (neither lower nor upper w/ medianOutDegree) = "
+       << notSureIfUpperOrLowerEstimate(n, medianOutDegree, 3) << endl;
+  cout << "estimated #edges (neither lower nor upper w/ fill) = "
+       << notSureIfUpperOrLowerEstimateWithFill(n, totalEdges, avgDegree, 3)
+       << endl;
+  cout << "estimated #edges (neither lower nor upper w/ fill and medianDegree) "
+          "= "
+       << notSureIfUpperOrLowerEstimateWithFill(n, totalEdges, medianDegree, 3)
+       << endl;
+  cout << "estimated #edges (neither lower nor upper w/ fill and "
+          "medianOutDegree) = "
+       << notSureIfUpperOrLowerEstimateWithFill(n, totalEdges, medianOutDegree,
+                                                3)
+       << endl;
+  cout << "3a. estimated #edges (loose upper) = "
+       << looseUpperBound(n, maxDegree, 3) << endl;
+  cout << "estimated #edges (loose upper out deg only) = "
+       << looseUpperBound(n, maxOutDegree, 3) << endl;
+  cout << "estimated #edges (loose upper out deg only using fill) = "
+       << looseUpperBoundWithFillFactor(n, totalEdges, maxOutDegree, 3) << endl;
+  cout << "estimated #edges on 3-hop path (from paper) = "
+       << 1.0 / 3.0 * 3.0 * avgDegree * (double)n << endl;
+  cout << "estimated #edges (tighter loose upper) = "
+       << looseUpperBound(n, medianDegree, 3) << endl;
+  cout << "3f. estimated #edges (tighter loose upper w/ fill) = "
+       << looseUpperBoundWithFillFactor(n, totalEdges, medianDegree, 3) << endl;
 
   batchInEdges.del();
   batchOutEdges.del();
