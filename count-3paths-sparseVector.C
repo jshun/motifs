@@ -471,12 +471,13 @@ int parallel_main(int argc, char *argv[]) {
   }
   cout << "expected #paths count (2 hops) = " << checkCount << endl;
 
-  // max degree is in used in one of the spanner size estimates:
+  // degree distributions and their summary stats are used in the spanner size
+  // estimates:
   long maxDegree = 0;
   long maxOutDegree = 0;
   vector<long> degrees;
   vector<long> outDegrees;
-  for (long i = 0; i < processedInEdges->size(); i++) {
+  for (long i = 0; i < n; i++) {
     long degree = processedInEdges[i].size() + processedOutEdges[i].size();
     maxDegree = max(maxDegree, degree);
     maxOutDegree = max(maxOutDegree, (long)processedOutEdges[i].size());
@@ -485,9 +486,9 @@ int parallel_main(int argc, char *argv[]) {
   }
   long medianDegree = median(degrees);
   long medianOutDegree = median(outDegrees);
-  cout << "maxDegree = " << maxDegree << endl;
-  cout << "medianDegree = " << medianDegree << endl;
-  cout << "medianOutDegree = " << medianOutDegree << endl;
+  cout << "degrees: max = " << maxDegree << ", avg = " << avgDegree
+       << ", median = " << medianDegree << ", medianOut = " << medianOutDegree
+       << endl;
 
   // different estimates for size in number of edges:
   // 2-hop:
@@ -517,8 +518,8 @@ int parallel_main(int argc, char *argv[]) {
        << looseUpperBound(n, maxDegree, 2) << endl;
   cout << "estimated #edges (loose upper w/ fill) = "
        << looseUpperBoundWithFillFactor(n, totalEdges, maxDegree, 2) << endl;
-  cout << "estimated #edges on 2-hop path (from paper) = "
-       << 1.0 / 2.0 * 2.0 * avgDegree * (double)n << endl;
+  //  cout << "estimated #edges on 2-hop path (from paper) = "
+  //       << 1.0 / 2.0 * 2.0 * avgDegree * (double)n << endl;
   cout << "estimated #edges (tighter loose upper) = "
        << looseUpperBound(n, medianDegree, 2) << endl;
   cout << "3f. estimated #edges (tighter loose upper w/ fill) = "
@@ -553,8 +554,8 @@ int parallel_main(int argc, char *argv[]) {
        << looseUpperBound(n, maxOutDegree, 3) << endl;
   cout << "estimated #edges (loose upper out deg only using fill) = "
        << looseUpperBoundWithFillFactor(n, totalEdges, maxOutDegree, 3) << endl;
-  cout << "estimated #edges on 3-hop path (from paper) = "
-       << 1.0 / 3.0 * 3.0 * avgDegree * (double)n << endl;
+  //  cout << "estimated #edges on 3-hop path (from paper) = "
+  //       << 1.0 / 3.0 * 3.0 * avgDegree * (double)n << endl;
   cout << "estimated #edges (tighter loose upper) = "
        << looseUpperBound(n, medianDegree, 3) << endl;
   cout << "3f. estimated #edges (tighter loose upper w/ fill) = "
