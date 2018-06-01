@@ -7,10 +7,10 @@
 #include <math.h>
 #include <vector> // used to calculate median for "view size" estimates
 
-// median (used for "view size" estimates)
-long median(vector<long> &v) {
-  size_t n = v.size() / 2;
-  nth_element(v.begin(), v.begin() + n, v.end());
+uintT percentile(vector<uintT> &v, double percent) {
+  size_t n = (percent * v.size()) / 100;
+  sort(v.begin(), v.end());
+
   return v[n];
 }
 
@@ -67,12 +67,6 @@ long notSureIfUpperOrLowerEstimate(long numNodes, double avgDegree, long k) {
   return (long)(numNodes * pow(avgDegree, k));
 }
 
-// same as above, but taking into account the fill.
-long notSureIfUpperOrLowerEstimateWithFill(long numNodes, long numEdges,
-                                           double avgDegree, long k) {
-  return (long)(numNodes * pow(avgDegree, k) * fill(numNodes, numEdges));
-}
-
 // from Julian: an estimate which is likely to be a very loose upper bound
 // for number of edges in directed k-hop spanner:
 long looseUpperBound(long numNodes, long maxDegree, long k) {
@@ -106,10 +100,9 @@ int parallel_main(int argc, char *argv[]) {
   long n = max(G.numRows, G.numCols); // number of vertices
   cout << "G.numRows = " << G.numRows << ", G.numCols = " << G.numCols << endl;
 
-  // stats
+  // size stats
   double avgDegree = (double)(2 * totalEdges) / (double)n;
-  cout << "#nodes = " << n << ", #edges = " << totalEdges
-       << ", avg degree = " << avgDegree << endl;
+  cout << "#nodes = " << n << ", #edges = " << totalEdges << endl;
 
   // start!
   cout << "starting timer\n";
@@ -473,22 +466,26 @@ int parallel_main(int argc, char *argv[]) {
 
   // degree distributions and their summary stats are used in the spanner size
   // estimates:
-  long maxDegree = 0;
-  long maxOutDegree = 0;
-  vector<long> degrees;
-  vector<long> outDegrees;
+  uintT maxDegree = 0;
+  uintT maxOutDegree = 0;
+  vector<uintT> degrees;
+  vector<uintT> outDegrees;
   for (long i = 0; i < n; i++) {
-    long degree = processedInEdges[i].size() + processedOutEdges[i].size();
+    uintT degree = processedInEdges[i].size() + processedOutEdges[i].size();
     maxDegree = max(maxDegree, degree);
-    maxOutDegree = max(maxOutDegree, (long)processedOutEdges[i].size());
+    maxOutDegree = max(maxOutDegree, processedOutEdges[i].size());
+    cout << "==>> degree = " << degree << endl;
     degrees.push_back(degree);
     outDegrees.push_back(processedOutEdges[i].size());
   }
-  long medianDegree = median(degrees);
-  long medianOutDegree = median(outDegrees);
+  uintT medianDegree = percentile(degrees, 50);
+  uintT medianOutDegree = percentile(outDegrees, 50);
   cout << "degrees: max = " << maxDegree << ", avg = " << avgDegree
        << ", median = " << medianDegree << ", medianOut = " << medianOutDegree
-       << endl;
+       << ", 0th \%ile = " << percentile(degrees, 0)
+       << ", 75th \%ile = " << percentile(degrees, 75)
+       << ", 99.9999th \%ile = " << percentile(degrees, 99.9999)
+       << ", fill factor = " << fill(n, totalEdges) << endl;
 
   // different estimates for size in number of edges:
   // 2-hop:
@@ -502,18 +499,6 @@ int parallel_main(int argc, char *argv[]) {
        << notSureIfUpperOrLowerEstimate(n, medianDegree, 2) << endl;
   cout << "2c. estimated #edges (neither lower nor upper w/ medianOutDegree) = "
        << notSureIfUpperOrLowerEstimate(n, medianOutDegree, 2) << endl;
-  cout << "estimated #edges (neither lower nor upper w/ fill) = "
-       << notSureIfUpperOrLowerEstimateWithFill(n, totalEdges, avgDegree, 2)
-       << endl;
-  cout << "estimated #edges (neither lower nor upper w/ fill and medianDegree) "
-          "= "
-       << notSureIfUpperOrLowerEstimateWithFill(n, totalEdges, medianDegree, 2)
-       << endl;
-  cout << "estimated #edges (neither lower nor upper w/ fill and "
-          "medianOutDegree) = "
-       << notSureIfUpperOrLowerEstimateWithFill(n, totalEdges, medianOutDegree,
-                                                2)
-       << endl;
   cout << "3a. estimated #edges (loose upper) = "
        << looseUpperBound(n, maxDegree, 2) << endl;
   cout << "estimated #edges (loose upper w/ fill) = "
@@ -536,18 +521,6 @@ int parallel_main(int argc, char *argv[]) {
        << notSureIfUpperOrLowerEstimate(n, medianDegree, 3) << endl;
   cout << "2c. estimated #edges (neither lower nor upper w/ medianOutDegree) = "
        << notSureIfUpperOrLowerEstimate(n, medianOutDegree, 3) << endl;
-  cout << "estimated #edges (neither lower nor upper w/ fill) = "
-       << notSureIfUpperOrLowerEstimateWithFill(n, totalEdges, avgDegree, 3)
-       << endl;
-  cout << "estimated #edges (neither lower nor upper w/ fill and medianDegree) "
-          "= "
-       << notSureIfUpperOrLowerEstimateWithFill(n, totalEdges, medianDegree, 3)
-       << endl;
-  cout << "estimated #edges (neither lower nor upper w/ fill and "
-          "medianOutDegree) = "
-       << notSureIfUpperOrLowerEstimateWithFill(n, totalEdges, medianOutDegree,
-                                                3)
-       << endl;
   cout << "3a. estimated #edges (loose upper) = "
        << looseUpperBound(n, maxDegree, 3) << endl;
   cout << "estimated #edges (loose upper out deg only) = "
