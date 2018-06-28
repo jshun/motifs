@@ -1,5 +1,6 @@
 import argparse
 import networkx as nx
+import numpy as np
 
 
 def get_components(graph):
@@ -21,15 +22,19 @@ def estimate_number_k_length_paths(k, graph):
             continue
 
         # Get degrees of vertices in remaining components.
-        cc_degrees = [deg for (node, deg) in graph.degree() if node in cc]
-        degrees += cc_degrees
+        degrees += [deg for (node, deg) in graph.degree() if node in cc]
 
     # Estimate number of k-length paths in the remaining vertices.
     n = len(degrees)
-    deg_avg = sum(degrees) / (float(len(degrees)))
-#    print 'n=%s, deg_avg=%s, k=%s' % (n, deg_avg, k)
 
-    return int(n * pow(deg_avg, k))
+    # Using average.
+#    deg_summary = sum(degrees) / (float(len(degrees)))
+    # Using median.
+#    deg_summary = np.percentile(degrees, 50)
+    # Using 95th %ile.
+    deg_summary = np.percentile(degrees, 95)
+
+    return int(n * pow(deg_summary, k))
 
 
 def main(k, input_snap_graph, is_directed):
