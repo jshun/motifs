@@ -27,13 +27,16 @@ def main(input_snap_graph, is_directed, output_filename):
     fh.close()
 
     degrees = [deg for (_, deg) in G.degree()]
+    # TODO: Cumulative binning so that we can fit an exponent on the power law
+    # using maximum likehood fitting. See:
+    # https://cs.brynmawr.edu/Courses/cs380/spring2013/section02/slides/10_ScaleFreeNetworks.pdf
     degree_hist = np.bincount(degrees)
     plot_loglog(degree_hist, output_filename)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description='Plots degree distribution in log-log normal with log binning.')
+        description='Plots degree distribution in log-log normal.')
     parser.add_argument('-i', '--input_snap_graph',
                         help='Relative path of input graph in SNAP format.',
                         required=True)
