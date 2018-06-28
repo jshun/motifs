@@ -4,7 +4,36 @@ import networkx as nx
 import numpy as np
 
 
-def plot_loglog(data, output_filename):
+def plot_cdfs(data, output_suffix):
+    # CDF
+    output_filename = 'cdf-' + output_suffix
+    s = float(data.sum())
+    cdf = data.cumsum(0)/s
+    plt.plot(range(len(cdf)),cdf,'bo')
+    plt.xscale('log')
+    plt.ylim([0,1])
+    plt.ylabel('CDF')
+    plt.xlabel('Degree')
+    plt.savefig(output_filename)
+    plt.clf()
+    print 'CDF saved as %s' % output_filename
+
+    # CCDF
+    output_filename = 'ccdf-' + output_suffix
+    ccdf = 1-cdf
+    plt.plot(range(len(ccdf)),ccdf,'bo')
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.ylim([0,1])
+    plt.ylabel('CCDF')
+    plt.xlabel('Degree')
+    plt.savefig(output_filename)
+    plt.clf()
+    print 'CCDF saved as %s' % output_filename
+
+
+def plot_loglog(data, output_suffix):
+    output_filename = 'loglog-' + output_suffix
     plt.plot(range(len(data)), data, 'b*')
     plt.yscale('log')
     plt.xscale('log')
@@ -12,10 +41,10 @@ def plot_loglog(data, output_filename):
     plt.xlabel('Degree')
     plt.savefig(output_filename)
     plt.clf()
-    print 'Plot saved as %s.' % output_filename
+    print 'Log-log saved as %s.' % output_filename
 
 
-def main(input_snap_graph, is_directed, output_filename):
+def main(input_snap_graph, is_directed, output_suffix):
     fh = open(input_snap_graph, 'rb')
 
     G = None
@@ -26,17 +55,18 @@ def main(input_snap_graph, is_directed, output_filename):
 
     fh.close()
 
-    degrees = [deg for (_, deg) in G.degree()]
-    # TODO: Cumulative binning so that we can fit an exponent on the power law
-    # using maximum likehood fitting. See:
+    # TODO: Maximum likehood fitting if we want to fit the exponent:
     # https://cs.brynmawr.edu/Courses/cs380/spring2013/section02/slides/10_ScaleFreeNetworks.pdf
-    degree_hist = np.bincount(degrees)
-    plot_loglog(degree_hist, output_filename)
+    keys, degrees = zip(*G.degree())
+    degree_dist = np.bincount(degrees)
+
+    plot_loglog(degree_dist, output_suffix)
+    plot_cdfs(degree_dist, output_suffix)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description='Plots degree distribution in log-log normal.')
+        description='Plots degree distribution CDF, CCDF and log-log.')
     parser.add_argument('-i', '--input_snap_graph',
                         help='Relative path of input graph in SNAP format.',
                         required=True)
@@ -45,8 +75,8 @@ if __name__ == "__main__":
                         dest='is_directed',
                         action='store_true')
     parser.set_defaults(is_directed=False)
-    parser.add_argument('-o', '--output_filename',
-                        help='Relative path of output plot (png, pdf, or eps).',
+    parser.add_argument('-o', '--output_suffix',
+                        help='Suffix of output filename, saved in current dir.',
                         required=True)
     args = parser.parse_args()
 
