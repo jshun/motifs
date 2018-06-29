@@ -2,6 +2,27 @@ import argparse
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
+import seaborn as sns
+
+# Seaborn global settings.
+sns.set(context='paper',
+        font='serif',
+        font_scale=2,
+        rc={
+            'lines.linewidth': 3,
+            'lines.markeredgewidth': 1,
+            'patch.linewidth': 2  # bar border
+        })
+sns.set_style('white', {'axes.linewidth': 1.5,
+                        'axes.edgecolor': '.0',
+                        'axes.labelcolor': '.0',
+                        'font.family': 'serif',
+                        'font.serif': 'Times New Roman',
+                        'grid.color': '.0',
+                        'text.color': '.0',
+                        'xtick.color': '.0',
+                        'ytick.color': '.0'})
+sns.despine(top=False, bottom=False)
 
 
 def plot_cdfs(data, output_suffix):
@@ -9,37 +30,49 @@ def plot_cdfs(data, output_suffix):
     output_filename = 'cdf-' + output_suffix
     s = float(data.sum())
     cdf = data.cumsum(0)/s
+    plt.figure()
     plt.plot(range(len(cdf)),cdf,'bo')
     plt.xscale('log')
     plt.ylim([0,1])
     plt.ylabel('CDF')
     plt.xlabel('Degree')
-    plt.savefig(output_filename)
+    fig = plt.gcf()
+    fig.set_figheight(6.5)
+    fig.set_figwidth(4)
+    fig.savefig(output_filename, format='pdf', bbox_inches='tight')
     plt.clf()
     print 'CDF saved as %s' % output_filename
 
     # CCDF
     output_filename = 'ccdf-' + output_suffix
     ccdf = 1-cdf
+    plt.figure()
     plt.plot(range(len(ccdf)),ccdf,'bo')
     plt.xscale('log')
     plt.yscale('log')
     plt.ylim([0,1])
     plt.ylabel('CCDF')
     plt.xlabel('Degree')
-    plt.savefig(output_filename)
+    fig = plt.gcf()
+    fig.set_figheight(6.5)
+    fig.set_figwidth(4)
+    fig.savefig(output_filename, format='pdf', bbox_inches='tight')
     plt.clf()
     print 'CCDF saved as %s' % output_filename
 
 
 def plot_loglog(data, output_suffix):
     output_filename = 'loglog-' + output_suffix
-    plt.plot(range(len(data)), data, 'b*')
+    plt.figure()
+    plt.plot(range(len(data)), data, 'bo')
     plt.yscale('log')
     plt.xscale('log')
     plt.ylabel('Frequency')
     plt.xlabel('Degree')
-    plt.savefig(output_filename)
+    fig = plt.gcf()
+    fig.set_figheight(6.5)
+    fig.set_figwidth(4)
+    fig.savefig(output_filename, format='pdf', bbox_inches='tight')
     plt.clf()
     print 'Log-log saved as %s.' % output_filename
 
