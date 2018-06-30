@@ -46,19 +46,37 @@ def plot_cdfs(data, output_suffix):
     # CCDF
     output_filename = 'ccdf-' + output_suffix
     ccdf = 1-cdf
+    print 'ccdf: %s' % ccdf
+    freq = ccdf * s
+    print 'freq: %s' % freq
     plt.figure()
-    plt.plot(range(len(ccdf)),ccdf,'bo')
+    plt.plot(range(len(freq)),freq,'bo')
+
+    # Fit exponential for power-law (linear on log-log CCDF)
+    # starting at 2nd rank of X log.
+    log_x = np.log10(np.array(range(len(freq))) + 1)
+    log_y = np.log10(np.array(freq) + 1)
+    first_rank = 2
+    log_x = log_x[first_rank:]
+    log_y = log_y[first_rank:]
+
+    # Don't try to fit if we don't have at least 2 points
+    if len(log_x) > 2:
+        m, b = np.polyfit(log_x, log_y, 1)  # log(y) = m*log(x) + b
+        y_fit = np.power(10, m * log_x + b)
+        plt.plot(range(first_rank, len(log_x) + first_rank), y_fit, ':')
+
     plt.xscale('log')
     plt.yscale('log')
-    plt.ylim([0,1])
-    plt.ylabel('CCDF')
+#    plt.ylim([0,1])
+    plt.ylabel('Frequency sample > x')
     plt.xlabel('Degree')
     fig = plt.gcf()
     fig.set_figheight(6.5)
     fig.set_figwidth(4)
     fig.savefig(output_filename, format='pdf', bbox_inches='tight')
     plt.clf()
-    print 'CCDF saved as %s' % output_filename
+    print 'CCDF (frequency) saved as %s' % output_filename
 
 
 def plot_loglog(data, output_suffix):
