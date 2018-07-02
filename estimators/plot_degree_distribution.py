@@ -1,4 +1,5 @@
 import argparse
+import matplotlib #; matplotlib.use('Qt4Agg')
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
@@ -24,6 +25,9 @@ sns.set_style('white', {'axes.linewidth': 1.5,
                         'ytick.color': '.0'})
 sns.despine(top=False, bottom=False)
 
+FIG_HEIGHT = 4
+FIG_WIDTH = 6.5
+
 
 def plot_cdfs(data, output_suffix):
     # CDF
@@ -31,14 +35,14 @@ def plot_cdfs(data, output_suffix):
     s = float(data.sum())
     cdf = data.cumsum(0)/s
     plt.figure()
-    plt.plot(range(len(cdf)),cdf,'bo')
+    plt.plot(range(len(cdf)),cdf,'bo',markeredgecolor='k')
     plt.xscale('log')
     plt.ylim([0,1])
     plt.ylabel('CDF')
     plt.xlabel('Degree')
     fig = plt.gcf()
-    fig.set_figheight(6.5)
-    fig.set_figwidth(4)
+    fig.set_figheight(FIG_HEIGHT)
+    fig.set_figwidth(FIG_WIDTH)
     fig.savefig(output_filename, format='pdf', bbox_inches='tight')
     plt.clf()
     print 'CDF saved as %s' % output_filename
@@ -50,7 +54,7 @@ def plot_cdfs(data, output_suffix):
     freq = ccdf * s
     print 'freq: %s' % freq
     plt.figure()
-    plt.plot(range(len(freq)),freq,'bo')
+    plt.plot(range(len(freq)),freq,'bo',markeredgecolor='k')
 
     # Fit exponential for power-law (linear on log-log CCDF)
     # starting at 2nd rank of X log.
@@ -69,11 +73,11 @@ def plot_cdfs(data, output_suffix):
     plt.xscale('log')
     plt.yscale('log')
 #    plt.ylim([0,1])
-    plt.ylabel('Frequency sample > x')
+    plt.ylabel('Freq. sample > x')
     plt.xlabel('Degree')
     fig = plt.gcf()
-    fig.set_figheight(6.5)
-    fig.set_figwidth(4)
+    fig.set_figheight(FIG_HEIGHT)
+    fig.set_figwidth(FIG_WIDTH)
     fig.savefig(output_filename, format='pdf', bbox_inches='tight')
     plt.clf()
     print 'CCDF (frequency) saved as %s' % output_filename
@@ -82,14 +86,14 @@ def plot_cdfs(data, output_suffix):
 def plot_loglog(data, output_suffix):
     output_filename = 'loglog-' + output_suffix
     plt.figure()
-    plt.plot(range(len(data)), data, 'bo')
+    plt.plot(range(len(data)), data, 'bo', markeredgecolor='k')
     plt.yscale('log')
     plt.xscale('log')
     plt.ylabel('Frequency')
     plt.xlabel('Degree')
     fig = plt.gcf()
-    fig.set_figheight(6.5)
-    fig.set_figwidth(4)
+    fig.set_figheight(FIG_HEIGHT)
+    fig.set_figwidth(FIG_WIDTH)
     fig.savefig(output_filename, format='pdf', bbox_inches='tight')
     plt.clf()
     print 'Log-log saved as %s.' % output_filename
