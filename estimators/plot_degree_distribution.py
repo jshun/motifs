@@ -25,8 +25,13 @@ sns.set_style('white', {'axes.linewidth': 1.5,
                         'ytick.color': '.0'})
 sns.despine(top=False, bottom=False)
 
-FIG_HEIGHT = 4
-FIG_WIDTH = 6.5
+FIG_HEIGHT = 4  # 6.5
+FIG_WIDTH = 4
+
+
+# Round up to nearest power of 10.
+def round_up(x):
+  return int(10**(np.ceil(np.log10(x))))
 
 
 def plot_cdfs(data, output_suffix):
@@ -35,9 +40,14 @@ def plot_cdfs(data, output_suffix):
     s = float(data.sum())
     cdf = data.cumsum(0)/s
     plt.figure()
-    plt.plot(range(len(cdf)),cdf,'bo',markeredgecolor='k')
-    plt.xscale('log')
-    plt.ylim([0,1])
+    x = range(len(cdf))
+    plt.plot(x, cdf, 'bo',markeredgecolor='k')
+    max_x = round_up(np.max(x))
+    plt.xlim([-0.01, max_x])
+    plt.ylim([-0.01, 1.01])  # CDF.
+    plt.xscale('symlog')
+    ax = plt.gca()
+    ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
     plt.ylabel('CDF')
     plt.xlabel('Degree')
     fig = plt.gcf()
@@ -50,16 +60,16 @@ def plot_cdfs(data, output_suffix):
     # CCDF
     output_filename = 'ccdf-' + output_suffix
     ccdf = 1-cdf
-    print 'ccdf: %s' % ccdf
     freq = ccdf * s
-    print 'freq: %s' % freq
     plt.figure()
     plt.plot(range(len(freq)),freq,'bo',markeredgecolor='k')
 
     # Fit exponential for power-law (linear on log-log CCDF)
     # starting at 2nd rank of X log.
-    log_x = np.log10(np.array(range(len(freq))) + 1)
-    log_y = np.log10(np.array(freq) + 1)
+    x = np.array(range(len(freq))) + 1
+    y = np.array(freq) + 1
+    log_x = np.log10(x)
+    log_y = np.log10(y)
     first_rank = 2
     log_x = log_x[first_rank:]
     log_y = log_y[first_rank:]
@@ -70,10 +80,15 @@ def plot_cdfs(data, output_suffix):
         y_fit = np.power(10, m * log_x + b)
         plt.plot(range(first_rank, len(log_x) + first_rank), y_fit, ':')
 
-    plt.xscale('log')
-    plt.yscale('log')
-#    plt.ylim([0,1])
-    plt.ylabel('Freq. sample > x')
+    max_y = round_up(np.max(y))
+    max_x = round_up(np.max(x))
+    plt.xlim([-0.01, max_x])
+    plt.ylim([-0.01, max_y])
+    plt.yscale('symlog')
+    plt.xscale('symlog')
+    ax = plt.gca()
+    ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+    plt.ylabel('Freq. deg. > x')
     plt.xlabel('Degree')
     fig = plt.gcf()
     fig.set_figheight(FIG_HEIGHT)
@@ -86,9 +101,17 @@ def plot_cdfs(data, output_suffix):
 def plot_loglog(data, output_suffix):
     output_filename = 'loglog-' + output_suffix
     plt.figure()
-    plt.plot(range(len(data)), data, 'bo', markeredgecolor='k')
-    plt.yscale('log')
-    plt.xscale('log')
+    x = range(len(data))
+    y = data
+    plt.plot(x, y, 'bo', markeredgecolor='k')
+    max_y = round_up(np.max(y))
+    max_x = round_up(np.max(x))
+    plt.xlim([-0.01, max_x])
+    plt.ylim([-0.01, max_y])
+    plt.yscale('symlog')
+    plt.xscale('symlog')
+    ax = plt.gca()
+    ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
     plt.ylabel('Frequency')
     plt.xlabel('Degree')
     fig = plt.gcf()
