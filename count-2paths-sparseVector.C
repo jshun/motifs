@@ -33,6 +33,7 @@ int parallel_main(int argc, char *argv[]) {
     outEdges[i].init();
   }
 
+  edgeArray<uintT> TwoHopG;
   long numBatches = 1 + (totalEdges - 1) / batchSize;
   long listCount = 0;
 
