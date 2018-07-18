@@ -26,7 +26,7 @@ def k_length_paths(n, m, k_hop_schema, config):
       degrees = data[:,1]
 
       # Number of nodes
-      n = len(degrees)
+      n_t = len(degrees)
 
       for alpha in [50,95,'avg']:
           if alpha not in k_length_paths:
@@ -42,11 +42,11 @@ def k_length_paths(n, m, k_hop_schema, config):
           if alpha not in k_length_paths:
               k_length_paths[alpha] = 0
 
-          k_length_paths[alpha] += int(float(n) * factor
+          k_length_paths[alpha] += int(float(n_t) * factor
               * pow(deg_summary, k))
 
     # Also estimate using lower bound formula.
-#    k_length_paths['lower_bound'] = lower_bound(n, m, k)
+    k_length_paths['lower_bound'] = lower_bound(n, m, k)
 
     return k_length_paths
 
