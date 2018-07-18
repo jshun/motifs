@@ -22,7 +22,6 @@ def k_length_paths(k_hop_schema, config):
           if alpha not in k_length_paths:
               k_length_paths[alpha] = 0
 
-
           if alpha == 'avg':
               deg_summary = np.average(degrees)
               factor = 0.5
