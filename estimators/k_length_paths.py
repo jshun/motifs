@@ -11,7 +11,7 @@ def k_length_paths(k_hop_schema, config):
 
     for vertex_type in k_hop_schema:
       outdegrees_file = config[vertex_type]
-      print 'loading degrees...'
+      print 'loading %s degrees...' % vertex_type
       data = np.loadtxt(outdegrees_file, delimiter=' ')
       degrees = data[:,1]
 
@@ -47,11 +47,11 @@ def main(k_hop_schema, input_outdegree_files):
 
 
 # e.g.,
-# python k_length_paths.py -s author \
-#   -i '{"author": \
-#   "/big_fast_drive/jfon/nets/1graphdblp/outdeg_author.txt", \
-#   "article": "/big_fast_drive/jfon/nets/1graphdblp/outdeg_author.txt"}'
-
+# python k_length_paths.py -s author article author -i \
+# '{"author": \
+#   "/big_fast_drive/jfon/nets/1graphdblp/outdeg_author-10k.txt", \
+#   "article": \
+#   "/big_fast_drive/jfon/nets/1graphdblp/outdeg_article-10k.txt"}'
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Estimate number of k-length paths in heterogeneous net.')
