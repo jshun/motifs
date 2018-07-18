@@ -1,84 +1,59 @@
 import argparse
+import json
 import networkx as nx
 import numpy as np
 
 
-def get_components(graph):
-    ccs = None
+# Estimates number of k-length paths.
+def k_length_paths(k_hop_schema, config):
+    k = len(k_hop_schema)
+    k_length_paths = 1
 
-    if nx.is_directed(graph):
-        return nx.strongly_connected_components(graph)
+    for vertex_type in k_hop_schema:
+      outdegrees_file = config[vertex_type]
+      print 'loading degrees...'
+      data = np.loadtxt(outdegrees_file, delimiter=' ')
+      degrees = data[:,1]
 
-    return nx.connected_components(graph)
+      # Number of nodes
+      n = len(degrees)
 
+      # Using average.
+      #    deg_summary = sum(degrees) / (float(len(degrees)))
+      # Using median.
+      #    deg_summary = np.percentile(degrees, 50)
+      # Using 95th %ile.
+      deg_summary = np.percentile(degrees, 50)
 
-# Heuristic: we use only the degrees of nodes that fall in connected
-# components which are of size at least k.
-def get_degrees(k, graph):
-    print 'Computing connected components...'
-    ccs = get_components(graph)
-    print 'Done computing CCs!'
+      k_length_paths *= n * pow(deg_summary, k)
 
-    degrees = []
-    for cc in ccs:
-        # Ignore components of size less than k, as they lack k-hop paths.
-        if len(cc) < k:
-            continue
-
-        # Get degrees of vertices in remaining components.
-        degrees += [deg for (node, deg) in graph.degree() if node in cc]
-
-    return degrees
+    return int(k_length_paths)
 
 
-# Estimates number of k-length paths using CC heuristic.
-def k_length_paths_CC(k, degrees):
-    if len(degrees) == 0:
-      return 0
+def main(k_hop_schema, input_outdegree_files):
+    print k_hop_schema
+    config=json.loads(input_outdegree_files)
 
-    # Using average.
-    #    deg_summary = sum(degrees) / (float(len(degrees)))
-    # Using median.
-    #    deg_summary = np.percentile(degrees, 50)
-    # Using 95th %ile.
-    deg_summary = np.percentile(degrees, 95)
-
-    # Number of nodes.
-    n = len(degrees)
-
-    return int(n * pow(deg_summary, k))
+    print 'Using het. network estimator=%s' % k_length_paths(
+        k_hop_schema, config)
 
 
-def main(k, input_snap_graph, is_directed):
-    fh = open(input_snap_graph, 'rb')
-
-    G = None
-    if is_directed:
-        G = nx.read_edgelist(fh, create_using=nx.DiGraph())
-    else:
-        G = nx.read_edgelist(fh)
-
-    fh.close()
-
-    degrees = get_degrees(k, G)
-    k_length_paths = k_length_paths_CC(k, degrees)
-
-    print 'Using CC heuristic=%s' % k_length_paths
-
+# e.g.,
+# python k_length_paths.py -s author \
+#   -i '{"author": \
+#   "/big_fast_drive/jfon/nets/1graphdblp/outdeg_author.txt", \
+#   "article": "/big_fast_drive/jfon/nets/1graphdblp/outdeg_author.txt"}'
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description='Estimator of number of k-length paths.')
-    parser.add_argument('-k', help='Path length',
-                        required=True,
-                        type=int)
-    parser.add_argument('-i', '--input_snap_graph',
-                        help='Input graph in SNAP format.')
-    parser.add_argument('--is_directed',
-                        help='Treats input graph as directed (default False).',
-                        dest='is_directed',
-                        action='store_true')
-    parser.set_defaults(is_directed=False)
+        description='Estimate number of k-length paths in heterogeneous net.')
+    parser.add_argument('-s', '--k_hop_schema',
+        help='Space separated list, e.g., author article author',
+        nargs='+',
+        required=True)
+    parser.add_argument('-i', '--input_outdegree_files',
+        help='One for each node type in a JSON object.',
+        required=True)
     args = parser.parse_args()
 
     main(**vars(args))
