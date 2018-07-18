@@ -7,7 +7,7 @@ import numpy as np
 # Estimates number of k-length paths.
 def k_length_paths(k_hop_schema, config):
     k = len(k_hop_schema)
-    k_length_paths = 1
+    k_length_paths = {}  # One for each value of alpha.
 
     for vertex_type in k_hop_schema:
       outdegrees_file = config[vertex_type]
@@ -18,16 +18,25 @@ def k_length_paths(k_hop_schema, config):
       # Number of nodes
       n = len(degrees)
 
-      # Using average.
-      #    deg_summary = sum(degrees) / (float(len(degrees)))
-      # Using median.
-      #    deg_summary = np.percentile(degrees, 50)
-      # Using 95th %ile.
-      deg_summary = np.percentile(degrees, 50)
+      for alpha in [50,95,'avg']:
+          if alpha not in k_length_paths:
+              k_length_paths[alpha] = 0
 
-      k_length_paths *= n * pow(deg_summary, k)
 
-    return int(k_length_paths)
+          if alpha == 'avg':
+              deg_summary = np.average(degrees)
+              factor = 0.5
+          else:
+              deg_summary = np.percentile(degrees, alpha)
+              factor = float(alpha)/100.0
+
+          if alpha not in k_length_paths:
+              k_length_paths[alpha] = 0
+
+          k_length_paths[alpha] += int(float(n) * factor
+              * pow(deg_summary, k))
+
+    return k_length_paths
 
 
 def main(k_hop_schema, input_outdegree_files):
