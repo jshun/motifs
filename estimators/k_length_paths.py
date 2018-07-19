@@ -16,7 +16,7 @@ def lower_bound(n, m, k):
 
 # Estimates number of k-length paths.
 def k_length_paths(n, m, k_hop_schema, config):
-    k = len(k_hop_schema)
+    k = len(k_hop_schema)-1
     k_length_paths = {}  # One for each value of alpha.
 
     for vertex_type in k_hop_schema:
@@ -34,19 +34,19 @@ def k_length_paths(n, m, k_hop_schema, config):
 
           if alpha == 'avg':
               deg_summary = np.average(degrees)
-              factor = 0.5
           else:
               deg_summary = np.percentile(degrees, alpha)
-              factor = float(alpha)/100.0
 
           if alpha not in k_length_paths:
               k_length_paths[alpha] = 0
 
-          k_length_paths[alpha] += int(float(n_t) * factor
-              * pow(deg_summary, k))
+          k_length_paths[alpha] += int(float(n_t) * pow(deg_summary, k))
+
+          print 'k=%s, vertex_type=%s, alpha=%s, deg_summary=%s, nodes=%s' % (
+              k, vertex_type, alpha, deg_summary, n_t)
 
     # Also estimate using lower bound formula.
-    k_length_paths['lower_bound'] = lower_bound(n, m, k)
+#    k_length_paths['lower_bound'] = lower_bound(n, m, k)
 
     return k_length_paths
 
@@ -55,7 +55,7 @@ def main(num_nodes, num_edges, k_hop_schema, input_outdegree_files):
     print k_hop_schema
     config=json.loads(input_outdegree_files)
 
-    print 'Using het. network estimator=%s' % k_length_paths(
+    print '\nUsing het. network estimator=%s' % k_length_paths(
         num_nodes, num_edges, k_hop_schema, config)
 
 
