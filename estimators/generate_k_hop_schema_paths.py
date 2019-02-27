@@ -34,6 +34,37 @@ def generate_k_hop_schema_paths(edges, paths_so_far, k, curr_k):
     return generate_k_hop_schema_paths(edges, paths_so_far, k, curr_k - 1)
 
 
+def to_dot_graph(view, view_name):
+    filename = 'dot_graphs/schema_k_hop-%s.dot' % view_name
+    with open(filename, 'w') as f:
+        f.write('digraph %s {\n' % view_name)
+
+        # all k-hop schema views are simple directed paths, so number of node is k+1
+        k = len(view)
+        num_nodes = k + 1
+        node_idx = 0
+        for i in xrange(k):
+            edge = view[i]
+            f.write(' %d [label="%s"];\n' % (node_idx + 1, edge[0]))
+
+            # print dst node if this is the last edge in the path
+            if i == k - 1:
+                f.write(' %d [label="%s"];\n' % (node_idx + 2, edge[1]))
+            node_idx += 1
+
+        f.write('\n')
+
+        # second pass over the edges to print them out
+        node_idx = 0
+        for edge in view:
+            f.write(' %d -> %d [label="%s"];\n' % (node_idx + 1, node_idx + 2,
+                                                   edge[2]))
+            node_idx += 1
+
+        # close digraph
+        f.write('}\n')
+
+
 def count_views(schema, k_lower, k_upper):
     print '\n%s:' % schema['name']
     edges = schema['edges']
@@ -46,55 +77,67 @@ def count_views(schema, k_lower, k_upper):
 
     for k in xrange(k_lower, k_upper + 1):
         views = generate_k_hop_schema_paths(edges, [], k, k)
-        print 'k=%d, N=%d, M=%d, #views=%d' % (k, len(nodes), len(edges),
-                                               len(views))
+        N = len(nodes)
+        M = len(edges)
+        print 'k=%d, N=%d, M=%d, #views=%d' % (k, N, M, len(views))
 
-        subset = views[:3]
-        print 'first %d views:' % len(subset)
-        for view in subset:
-            print view
+        views_slice = views[:3]
+        if len(views_slice) > 0:
+            print 'saving first %d views as dot graph...' % len(views_slice)
+            for i in xrange(len(views_slice)):
+                view = views_slice[i]
+                view_name = 'N%d_M%d_k%d-view%d' % (N, M, k, i)
+                to_dot_graph(view, view_name)
 
 
+# yapf: disable
 schemas = [{
     'name': 'Homogeneous Single Layer (N=1,M=1)',
-    'edges': [('Node', 'Node', 'Edge')]
+    'edges': [('VType_1', 'VType_1', 'EType_1')]
 }, {
     'name':
     'Homogeneous Multilayer (N=1,M=2)',
-    'edges': [('Node', 'Node', 'EdgeType1'), ('Node', 'Node', 'EdgeType2')]
+    'edges': [('VType_1', 'VType_1', 'EType_1'),
+              ('VType_1', 'VType_1', 'EType_2')]
 }, {
     'name':
     'Homogeneous Multilayer (N=1,M=3)',
-    'edges': [('Node', 'Node', 'EdgeType1'), ('Node', 'Node', 'EdgeType2'),
-              ('Node', 'Node', 'EdgeType3')]
+    'edges': [('VType_1', 'VType_1', 'EType_1'),
+              ('VType_1', 'VType_1', 'EType_2'),
+              ('VType_1', 'VType_1', 'EType_3')],
+    # used for dot graph output
+    'dot_graph_prefix': 'N1_M3_'
 }, {
     'name':
     'Homogeneous Multilayer (N=1,M=4)',
-    'edges': [('Node', 'Node', 'EdgeType1'), ('Node', 'Node', 'EdgeType2'),
-              ('Node', 'Node', 'EdgeType3'), ('Node', 'Node', 'EdgeType4')]
+    'edges': [('VType_1', 'VType_1', 'EType_1'),
+              ('VType_1', 'VType_1', 'EType_2'),
+              ('VType_1', 'VType_1', 'EType_3'),
+              ('VType_1', 'VType_1', 'EType_4')]
 }, {
     'name':
     'Heterogeneous Multilayer w/ Cycle (N=2,M=2)',
-    'edges': [('NodeType1', 'NodeType2', 'EdgeType1'),
-              ('NodeType2', 'NodeType1', 'EdgeType2')]
+    'edges': [('VType_1', 'VType_2', 'EType_1'),
+              ('VType_2', 'VType_1', 'EType_2')]
 }, {
     'name':
     'Heterogeneous Multilayer w/ Cycle (N=3,M=3)',
-    'edges': [('NodeType1', 'NodeType2',
-               'EdgeType1'), ('NodeType2', 'NodeType3', 'EdgeType2'),
-              ('NodeType3', 'NodeType1', 'EdgeType3')]
+    'edges': [('VType_1', 'VType_2', 'EType_1'),
+              ('VType_2', 'VType_3', 'EType_2'),
+              ('VType_3', 'VType_1', 'EType_3')]
 }, {
     'name':
     'Heterogeneous Multilayer w/o Cycle (N=3,M=2)',
-    'edges': [('NodeType1', 'NodeType2', 'EdgeType1'),
-              ('NodeType2', 'NodeType3', 'EdgeType2')]
+    'edges': [('VType_1', 'VType_2', 'EType_1'),
+              ('VType_2', 'VType_3', 'EType_2')]
 }, {
     'name':
     'Heterogeneous Multilayer w/o Cycle (N=4,M=3)',
-    'edges': [('NodeType1', 'NodeType2',
-               'EdgeType1'), ('NodeType2', 'NodeType3', 'EdgeType2'),
-              ('NodeType3', 'NodeType4', 'EdgeType3')]
+    'edges': [('VType_1', 'VType_2', 'EType_1'),
+              ('VType_2', 'VType_3', 'EType_2'),
+              ('VType_3', 'VType_4', 'EType_3')]
 }]
+# yapf: enable
 
 for schema in schemas:
     count_views(schema, 2, 8)

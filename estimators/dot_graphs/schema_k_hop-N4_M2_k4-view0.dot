@@ -1,0 +1,12 @@
+digraph N4_M2_k4-view0 {
+ 1 [label="VType_1"];
+ 2 [label="VType_2"];
+ 3 [label="VType_1"];
+ 4 [label="VType_2"];
+ 5 [label="VType_1"];
+
+ 1 -> 2 [label="EType_1"];
+ 2 -> 3 [label="EType_2"];
+ 3 -> 4 [label="EType_1"];
+ 4 -> 5 [label="EType_2"];
+}
