@@ -1,0 +1,8 @@
+digraph N3_M3_k2_view1 {
+ 1 [label="VType_2"];
+ 2 [label="VType_3"];
+ 3 [label="VType_1"];
+
+ 1 -> 2 [label="EType_2"];
+ 2 -> 3 [label="EType_3"];
+}

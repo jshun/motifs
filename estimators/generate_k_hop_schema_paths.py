@@ -35,7 +35,7 @@ def generate_k_hop_schema_paths(edges, paths_so_far, k, curr_k):
 
 
 def to_dot_graph(view, view_name):
-    filename = 'dot_graphs/schema_k_hop-%s.dot' % view_name
+    filename = 'dot_graphs/schema_k_hop_%s.dot' % view_name
     with open(filename, 'w') as f:
         f.write('digraph %s {\n' % view_name)
 
@@ -86,7 +86,7 @@ def count_views(schema, k_lower, k_upper):
             print 'saving first %d views as dot graph...' % len(views_slice)
             for i in xrange(len(views_slice)):
                 view = views_slice[i]
-                view_name = 'N%d_M%d_k%d-view%d' % (N, M, k, i)
+                view_name = 'N%d_M%d_k%d_view%d' % (N, M, k, i)
                 to_dot_graph(view, view_name)
 
 

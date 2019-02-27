@@ -1,8 +1,0 @@
-digraph N2_M2_k2-view1 {
- 1 [label="VType_2"];
- 2 [label="VType_1"];
- 3 [label="VType_2"];
-
- 1 -> 2 [label="EType_2"];
- 2 -> 3 [label="EType_1"];
-}
