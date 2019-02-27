@@ -38,6 +38,8 @@ def to_dot_graph(view, view_name):
     filename = 'dot_graphs/schema_k_hop_%s.dot' % view_name
     with open(filename, 'w') as f:
         f.write('digraph %s {\n' % view_name)
+        # left-to-right layout
+        f.write(' rankdir="LR";\n')
 
         # all k-hop schema views are simple directed paths, so number of node is k+1
         k = len(view)

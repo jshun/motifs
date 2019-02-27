@@ -1,4 +1,5 @@
 digraph N1_M3_k4_view1 {
+ rankdir="LR";
  1 [label="VType_1"];
  2 [label="VType_1"];
  3 [label="VType_1"];
