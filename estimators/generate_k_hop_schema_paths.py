@@ -77,8 +77,8 @@ def count_views(schema, k_lower, k_upper):
 
     for k in xrange(k_lower, k_upper + 1):
         views = generate_k_hop_schema_paths(edges, [], k, k)
-        N = len(nodes)
-        M = len(edges)
+        N = schema['N']
+        M = schema['M']  # same as len(schema['edges'])
         print 'k=%d, N=%d, M=%d, #views=%d' % (k, N, M, len(views))
 
         views_slice = views[:3]
@@ -93,49 +93,63 @@ def count_views(schema, k_lower, k_upper):
 # yapf: disable
 schemas = [{
     'name': 'Homogeneous Single Layer (N=1,M=1)',
-    'edges': [('VType_1', 'VType_1', 'EType_1')]
+    'edges': [('VType_1', 'VType_1', 'EType_1')],
+    'N': 1,
+    'M': 1
 }, {
     'name':
     'Homogeneous Multilayer (N=1,M=2)',
     'edges': [('VType_1', 'VType_1', 'EType_1'),
-              ('VType_1', 'VType_1', 'EType_2')]
+              ('VType_1', 'VType_1', 'EType_2')],
+    'N': 1,
+    'M': 2
 }, {
     'name':
     'Homogeneous Multilayer (N=1,M=3)',
     'edges': [('VType_1', 'VType_1', 'EType_1'),
               ('VType_1', 'VType_1', 'EType_2'),
               ('VType_1', 'VType_1', 'EType_3')],
-    # used for dot graph output
-    'dot_graph_prefix': 'N1_M3_'
+    'N': 1,
+    'M': 3
 }, {
     'name':
     'Homogeneous Multilayer (N=1,M=4)',
     'edges': [('VType_1', 'VType_1', 'EType_1'),
               ('VType_1', 'VType_1', 'EType_2'),
               ('VType_1', 'VType_1', 'EType_3'),
-              ('VType_1', 'VType_1', 'EType_4')]
+              ('VType_1', 'VType_1', 'EType_4')],
+    'N': 1,
+    'M': 4
 }, {
     'name':
     'Heterogeneous Multilayer w/ Cycle (N=2,M=2)',
     'edges': [('VType_1', 'VType_2', 'EType_1'),
-              ('VType_2', 'VType_1', 'EType_2')]
+              ('VType_2', 'VType_1', 'EType_2')],
+    'N': 2,
+    'M': 2
 }, {
     'name':
     'Heterogeneous Multilayer w/ Cycle (N=3,M=3)',
     'edges': [('VType_1', 'VType_2', 'EType_1'),
               ('VType_2', 'VType_3', 'EType_2'),
-              ('VType_3', 'VType_1', 'EType_3')]
+              ('VType_3', 'VType_1', 'EType_3')],
+    'N': 3,
+    'M': 3
 }, {
     'name':
     'Heterogeneous Multilayer w/o Cycle (N=3,M=2)',
     'edges': [('VType_1', 'VType_2', 'EType_1'),
-              ('VType_2', 'VType_3', 'EType_2')]
+              ('VType_2', 'VType_3', 'EType_2')],
+    'N': 3,
+    'M': 2
 }, {
     'name':
     'Heterogeneous Multilayer w/o Cycle (N=4,M=3)',
     'edges': [('VType_1', 'VType_2', 'EType_1'),
               ('VType_2', 'VType_3', 'EType_2'),
-              ('VType_3', 'VType_4', 'EType_3')]
+              ('VType_3', 'VType_4', 'EType_3')],
+    'N': 4,
+    'M': 3
 }]
 # yapf: enable
 
