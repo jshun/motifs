@@ -46,81 +46,55 @@ def count_views(schema, k_lower, k_upper):
 
     for k in xrange(k_lower, k_upper + 1):
         views = generate_k_hop_schema_paths(edges, [], k, k)
-        print 'k=%d, n=%d, m=%d, #views=%d' % (k, len(nodes), len(edges),
+        print 'k=%d, N=%d, M=%d, #views=%d' % (k, len(nodes), len(edges),
                                                len(views))
 
-#edges = [
-#    ('Job', 'File', 'writesTo'),
-#    ('File', 'Job', 'isReadBy')
-#]
-# List k-hop schema paths:
-#k = 2
-#print 'paths:'
-#for i, path in enumerate(generate_k_hop_schema_paths(edges, [], k, k)):
-#    print "%d:\n%s\n" % (i, path)
+        subset = views[:3]
+        print 'first %d views:' % len(subset)
+        for view in subset:
+            print view
 
-schemas = [
-    {
-        'name': 'Homogeneous Single Layer (n=1,m=1)',
-        'edges': [
-            ('Node', 'Node', 'Edge')
-        ]
-    },
-    {
-        'name': 'Homogeneous Multilayer (n=1,m=2)',
-        'edges': [
-            ('Node', 'Node', 'EdgeType1'),
-            ('Node', 'Node', 'EdgeType2')
-        ]
-    },
-    {
-        'name': 'Homogeneous Multilayer (n=1,m=3)',
-        'edges': [
-            ('Node', 'Node', 'EdgeType1'),
-            ('Node', 'Node', 'EdgeType2'),
-            ('Node', 'Node', 'EdgeType3')
-        ]
-    },
-    {
-        'name': 'Homogeneous Multilayer (n=1,m=4)',
-        'edges': [
-            ('Node', 'Node', 'EdgeType1'),
-            ('Node', 'Node', 'EdgeType2'),
-            ('Node', 'Node', 'EdgeType3'),
-            ('Node', 'Node', 'EdgeType4')
-        ]
-    },
-    {
-        'name': 'Heterogeneous Multilayer w/ Cycle (n=2,m=2)',
-        'edges': [
-            ('NodeType1', 'NodeType2', 'EdgeType1'),
-            ('NodeType2', 'NodeType1', 'EdgeType2')
-        ]
-    },
-    {
-        'name': 'Heterogeneous Multilayer w/ Cycle (n=3,m=3)',
-        'edges': [
-            ('NodeType1', 'NodeType2', 'EdgeType1'),
-            ('NodeType2', 'NodeType3', 'EdgeType2'),
-            ('NodeType3', 'NodeType1', 'EdgeType3')
-        ]
-    },
-    {
-        'name': 'Heterogeneous Multilayer w/o Cycle (n=3,m=2)',
-        'edges': [
-            ('NodeType1', 'NodeType2', 'EdgeType1'),
-            ('NodeType2', 'NodeType3', 'EdgeType2')
-        ]
-    },
-    {
-        'name': 'Heterogeneous Multilayer w/o Cycle (n=4,m=3)',
-        'edges': [
-            ('NodeType1', 'NodeType2', 'EdgeType1'),
-            ('NodeType2', 'NodeType3', 'EdgeType2'),
-            ('NodeType3', 'NodeType4', 'EdgeType3')
-        ]
-    }
-]
+
+schemas = [{
+    'name': 'Homogeneous Single Layer (N=1,M=1)',
+    'edges': [('Node', 'Node', 'Edge')]
+}, {
+    'name':
+    'Homogeneous Multilayer (N=1,M=2)',
+    'edges': [('Node', 'Node', 'EdgeType1'), ('Node', 'Node', 'EdgeType2')]
+}, {
+    'name':
+    'Homogeneous Multilayer (N=1,M=3)',
+    'edges': [('Node', 'Node', 'EdgeType1'), ('Node', 'Node', 'EdgeType2'),
+              ('Node', 'Node', 'EdgeType3')]
+}, {
+    'name':
+    'Homogeneous Multilayer (N=1,M=4)',
+    'edges': [('Node', 'Node', 'EdgeType1'), ('Node', 'Node', 'EdgeType2'),
+              ('Node', 'Node', 'EdgeType3'), ('Node', 'Node', 'EdgeType4')]
+}, {
+    'name':
+    'Heterogeneous Multilayer w/ Cycle (N=2,M=2)',
+    'edges': [('NodeType1', 'NodeType2', 'EdgeType1'),
+              ('NodeType2', 'NodeType1', 'EdgeType2')]
+}, {
+    'name':
+    'Heterogeneous Multilayer w/ Cycle (N=3,M=3)',
+    'edges': [('NodeType1', 'NodeType2',
+               'EdgeType1'), ('NodeType2', 'NodeType3', 'EdgeType2'),
+              ('NodeType3', 'NodeType1', 'EdgeType3')]
+}, {
+    'name':
+    'Heterogeneous Multilayer w/o Cycle (N=3,M=2)',
+    'edges': [('NodeType1', 'NodeType2', 'EdgeType1'),
+              ('NodeType2', 'NodeType3', 'EdgeType2')]
+}, {
+    'name':
+    'Heterogeneous Multilayer w/o Cycle (N=4,M=3)',
+    'edges': [('NodeType1', 'NodeType2',
+               'EdgeType1'), ('NodeType2', 'NodeType3', 'EdgeType2'),
+              ('NodeType3', 'NodeType4', 'EdgeType3')]
+}]
 
 for schema in schemas:
     count_views(schema, 2, 8)
